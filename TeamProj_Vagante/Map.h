@@ -9,7 +9,7 @@ class UI;
 #define ITEMBOXMAX 2
 
 /*
-!vaganteStructEnum.h에서 선언했으니 참조만 할 것!
+!Reference the detailed type definition in vaganteStructEnum.h!
 enum MAPTILETYPE 
 {
 	MAPTILE_NULL,
@@ -25,11 +25,11 @@ enum MAPTILETYPE
 
 struct mapInfo 
 {
-	//타일 종류
+	//Tile type
 	int type;
-	//타일 위치
+	//Tile position
 	POINT point;
-	//타일 렉트
+	//Tile rect
 	RECT rc;
 };
 */
@@ -40,10 +40,10 @@ struct tagObj
 	RECT rc;
 	float X, Y;
 	int FrameX, FrameY;
-	// 상자 개봉 상태
+	// Box open state
 	bool _openBox;  
 
-	// 상자가 열렸었는지 확인하기 위한 불값
+	// Flag to check if the event has already occurred
 	bool _eventChk;
 };
 struct tagMiniMap
@@ -86,14 +86,15 @@ public:
 	void render();
 	void render(POINT camera);
 	void draw(POINT camera);
+	void drawDebug(POINT camera);
 	void drawMinimap();
 	void setTile();
 	void setObject();
 	
-	tagObj getCoinBox(int i) { return coinBox[i]; }// 코인박스의 정보
-	tagObj getitemBox(int i) { return itemBox[i]; }// 아이템박스의 정보
-	void setCoinBox(int i, bool isOpen) { coinBox[i]._openBox = isOpen; }// 코인박스의 상태변화
-	void setItemBox(int i, bool isOpen) { itemBox[i]._openBox = isOpen; }// 아이템박스의 상태변화
+	tagObj getCoinBox(int i) { return coinBox[i]; }// Return coin box
+	tagObj getitemBox(int i) { return itemBox[i]; }// Return item box
+	void setCoinBox(int i, bool isOpen) { coinBox[i]._openBox = isOpen; }// Coin box state change
+	void setItemBox(int i, bool isOpen) { itemBox[i]._openBox = isOpen; }// Item box state change
 
 	mapInfo getMapInfo(int i, int j) { return _mapInfo[i][j]; }
 
@@ -104,4 +105,3 @@ public:
 	Map();
 	~Map();
 };
-

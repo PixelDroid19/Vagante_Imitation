@@ -16,7 +16,7 @@ HRESULT Map::init()
 {
 	setTile();
 	setObject();
-	// 맵 이미지임
+	// Load background images
 	_BgImg = new image;
 	_BgImg->init("Img\\etc\\BackGround.bmp", 1980, 1280, true, RGB(255, 0, 255));
 	_mapImg = new image;
@@ -87,13 +87,13 @@ void Map::update()
 
 
 	/*
-	아이템 생성 방법
+	Register item info example
 
 	tagItemInfo item;
-	//이미지
-	item.bigImg = IMAGEMANAGER->findImage(); // 큰 이미지(인벤토리에서 보여줄 이미지)
-	item.smallImg = IMAGEMANAGER->findImage(); //작은 이미지(맵 위에서 보여줄 이미지)
-	//능력치
+	//item
+	item.bigImg = IMAGEMANAGER->findImage(); // Big image (image displayed in inventory)
+	item.smallImg = IMAGEMANAGER->findImage(); //Small image (image displayed on map)
+	//stats
 	item.itemstat.hp = 0;
 	item.itemstat.str = 1;
 	item.itemstat.dex = 0;
@@ -111,11 +111,11 @@ void Map::update()
 	item.itemstat.aspd = 0;
 	item.itemstat.spd = 0;
 	item.itemstate = ITEMSTATE_ONMAP;
-	//아이템 좌표
+	//item position index
 	item.point = ;
-	//아이템 rect
+	//item rect
 	item.rc = ;
-	//만든 아이템 정보 map에 넘겨주기!
+	//Created item is saved to the map!
 	_ui->addItemOnMap(item);
 	*/
 
@@ -124,8 +124,8 @@ void Map::render()
 {
 }
 
-//그릴 때	x좌표에 camera.x 만큼
-//			y좌표에 camera.y 만큼 더해주기!!!!
+//Camera render	x = camera.x offset
+//				y = camera.y offset adjusted!!!!
 void Map::render(POINT camera)
 {
 	draw(camera);
@@ -189,8 +189,67 @@ void Map::draw(POINT camera)
 
 
 	miniMap.Image->render(getMemDC(), miniMap.X, miniMap.Y);
-	Rectangle(getMemDC(), miniMap.playerRc.left+_player->getPoint().x/8, miniMap.playerRc.top + _player->getPoint().y / 8, miniMap.playerRc.right+ _player->getPoint().x / 8, miniMap.playerRc.bottom + _player->getPoint().y / 8);
-	//~test
+	if (isDebugDrawEnabled())
+	{
+		int mx = miniMap.playerRc.left + _player->getPoint().x / 8;
+		int my = miniMap.playerRc.top + _player->getPoint().y / 8;
+		debugDrawPoint(getMemDC(), mx, my, 2, DebugPalette::Player);
+	}
+	else
+		Rectangle(getMemDC(), miniMap.playerRc.left+_player->getPoint().x/8, miniMap.playerRc.top + _player->getPoint().y / 8, miniMap.playerRc.right+ _player->getPoint().x / 8, miniMap.playerRc.bottom + _player->getPoint().y / 8);
+}
+void Map::drawDebug(POINT camera)
+{
+	if (!isDebugDrawEnabled())
+		return;
+
+	SDL_Renderer* dc = getMemDC();
+	const int viewLeft = -camera.x;
+	const int viewTop = -camera.y;
+	const int viewRight = viewLeft + WINSIZEX;
+	const int viewBottom = viewTop + WINSIZEY;
+
+	const int rowStart = std::max(0, viewTop / TILESIZE - 1);
+	const int rowEnd = std::min(39, viewBottom / TILESIZE + 1);
+	const int colStart = std::max(0, viewLeft / TILESIZE - 1);
+	const int colEnd = std::min(57, viewRight / TILESIZE + 1);
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_GRID) || isDebugLayerEnabled(DEBUG_LAYER_TILES))
+	{
+		for (int i = rowStart; i <= rowEnd; i++)
+		{
+			for (int j = colStart; j <= colEnd; j++)
+			{
+				const RECT& tile = _mapInfo[i][j].rc;
+				const int type = _mapInfo[i][j].type;
+
+				if (isDebugLayerEnabled(DEBUG_LAYER_GRID))
+					debugDrawRect(dc, tile, camera, DebugPalette::Grid);
+
+				if (!isDebugLayerEnabled(DEBUG_LAYER_TILES))
+					continue;
+
+				if (type == MAPTILE_WALL || type == MAPTILE_WALL2)
+				{
+					debugDrawFilledRect(dc, tile, camera, DebugPalette::WallFill);
+					debugDrawRect(dc, tile, camera, DebugPalette::Wall);
+				}
+				else if (type == MAPTILE_LADDER)
+					debugDrawRect(dc, tile, camera, DebugPalette::Ladder);
+				else if (type == MAPTILE_SPIKE_TRAP)
+					debugDrawRect(dc, tile, camera, DebugPalette::Trap);
+			}
+		}
+	}
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_HITBOX))
+	{
+		for (int i = 0; i < ITEMBOXMAX; i++)
+			debugDrawRect(dc, itemBox[i].rc, camera, DebugPalette::ItemBox);
+
+		for (int i = 0; i < COINBOXMAX; i++)
+			debugDrawRect(dc, coinBox[i].rc, camera, DebugPalette::CoinBox);
+	}
 }
 void Map::drawMinimap()
 {
@@ -211,7 +270,7 @@ void Map::setTile()
 		5 : MAPTILE_SPIKE_TRAP
 	*/
 
-	//맵 구성
+	//Map data
 	int temp[40][58] = 
 	{
 		{ 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1, 1,1,1,1,1 } ,

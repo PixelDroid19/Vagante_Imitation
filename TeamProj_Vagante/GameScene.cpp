@@ -20,7 +20,7 @@ HRESULT GameScene::init()
 	_map = new Map;
 	_ui = new UI;
 
-	//상호참조 연결
+	//??????? ????
 	_map->setEnemyManagerAddressLink(_em);
 	_map->setPlayerAddressLink(_player);
 	_map->setUiAddressLink(_ui);
@@ -59,37 +59,49 @@ void GameScene::update()
 
 	SOUNDMANAGER->update();
 
-	//카메라 위치 재조정
+	// Clamp camera to map bounds (skip if background image failed to load)
 	if (_camera.x < WINSIZEX / 2)
 	{
 		_camera.x = WINSIZEX / 2;
 	}
-	else if (_camera.x > IMAGEMANAGER->findImage("bg")->getWidth() - WINSIZEX / 2)
+	else
 	{
-		_camera.x = IMAGEMANAGER->findImage("bg")->getWidth() - WINSIZEX / 2;
+		image* bg = IMAGEMANAGER->findImage("bg");
+		if (bg && _camera.x > bg->getWidth() - WINSIZEX / 2)
+			_camera.x = bg->getWidth() - WINSIZEX / 2;
 	}
 	if (_camera.y < WINSIZEY / 2)
 	{
 		_camera.y = WINSIZEY / 2;
 	}
-	else if (_camera.y > IMAGEMANAGER->findImage("bg")->getHeight() - WINSIZEY / 2)
+	else
 	{
-		_camera.y = IMAGEMANAGER->findImage("bg")->getHeight() - WINSIZEY / 2;
+		image* bg = IMAGEMANAGER->findImage("bg");
+		if (bg && _camera.y > bg->getHeight() - WINSIZEY / 2)
+			_camera.y = bg->getHeight() - WINSIZEY / 2;
 	}
 }
 void GameScene::render()
 {
-	_map->render(PointMake(WINSIZEX / 2 - _camera.x, WINSIZEY / 2 - _camera.y));
-	_em->render(PointMake(WINSIZEX / 2 - _camera.x, WINSIZEY / 2 - _camera.y));
-	_player->render(PointMake(WINSIZEX / 2 - _camera.x, WINSIZEY / 2 - _camera.y));
-	_ui->render(PointMake(WINSIZEX / 2 - _camera.x, WINSIZEY / 2 - _camera.y));
+	POINT camera = PointMake(WINSIZEX / 2 - _camera.x, WINSIZEY / 2 - _camera.y);
+	_map->render(camera);
+	_em->render(camera);
+	_player->render(camera);
+	_ui->render(camera);
+
+	if (!isDebugDrawEnabled())
+		return;
+
+	_map->drawDebug(camera);
+	_em->drawDebug(camera);
+	_player->drawDebug(camera);
 }
 
 void GameScene::addImage()
 {
-	//이미지 추가는 여기서!!
+	//????? ????? ????!!
 	IMAGEMANAGER->addImage("bg", "Img/etc/temp_bg.bmp", TILESIZE * 58, TILESIZE * 40, true, RGB(255, 0, 255));
-	IMAGEMANAGER->addFrameImage("폭발", "Img/etc/explosion_1.bmp", 448, 64, 7, 1, true, RGB(255, 0, 255));
+	IMAGEMANAGER->addFrameImage("????", "Img/etc/explosion_1.bmp", 448, 64, 7, 1, true, RGB(255, 0, 255));
 	IMAGEMANAGER->addFrameImage("test", "Img/etc/tes.bmp", 40, 224, 1, 7, true, RGB(255, 0, 255));
 
 
@@ -171,6 +183,24 @@ void GameScene::addImage()
 }
 void GameScene::keyInput()
 {
+	if (KEYMANAGER->isOnceKeyDown(VK_F3))
+		toggleDebugDraw();
+
+	if (KEYMANAGER->isOnceKeyDown(VK_F4) && isDebugDrawEnabled())
+	{
+		static const int layerCycle[] = {
+			DEBUG_LAYER_GRID | DEBUG_LAYER_TILES,
+			DEBUG_LAYER_PLAYER_9,
+			DEBUG_LAYER_RAYS,
+			DEBUG_LAYER_PATH,
+			DEBUG_LAYER_HITBOX,
+			DEBUG_LAYER_ALL
+		};
+		static int layerIndex = 5;
+		layerIndex = (layerIndex + 1) % 6;
+		setDebugDrawLayers(layerCycle[layerIndex]);
+	}
+
 	if (KEYMANAGER->isOnceKeyDown(VK_SPACE))
 	{
 		if (_UsingStatusWindow)
