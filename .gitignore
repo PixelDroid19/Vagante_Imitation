@@ -281,6 +281,13 @@ __pycache__/
 # Telerik's JustMock configuration file
 *.jmconfig
 
+# CMake build directories
+TeamProj_Vagante/build/
+TeamProj_Vagante/build-debug/
+
+# opencode AI tool session state
+.opencode/
+
 # BizTalk build output
 *.btp.cs
 *.btm.cs
