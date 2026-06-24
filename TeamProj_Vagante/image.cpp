@@ -1,145 +1,151 @@
 #include "stdafx.h"
 #include "image.h"
+#include <cstring>
 
-#pragma comment(lib, "msimg32.lib")
+static void normalizePath(char* path)
+{
+	for (int i = 0; path[i]; i++)
+		if (path[i] == '\\') path[i] = '/';
+}
 
 image::image()
 	: _imageInfo(NULL),
 	_fileName(NULL),
 	_trans(false),
-	_transColor(RGB(0, 0, 0))
+	_transColor(0)
 {
 }
-
 
 image::~image()
 {
-
 }
-//빈 비트맵 이미지 초기화
-HRESULT image::init(int width, int height, BOOL trans, COLORREF transColor)
-{
-	//이미지 정보가 널이 아니라면(이미지가 들어있다면) 해제해라
-	if (_imageInfo != NULL) release();
 
-	HDC hdc = GetDC(_hWnd);
+int image::init(int width, int height, BOOL trans, COLORREF transColor)
+{
+	if (_imageInfo != NULL) release();
 
 	_imageInfo = new IMAGE_INFO;
 	_imageInfo->loadType = LOAD_EMPTY;
 	_imageInfo->resID = 0;
-	_imageInfo->hMemDC = CreateCompatibleDC(hdc);	//빈 DC영역을 생성
-	_imageInfo->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, width, height);
-	_imageInfo->hOBit = (HBITMAP)SelectObject(_imageInfo->hMemDC, _imageInfo->hBit);
+	_imageInfo->texture = SDL_CreateTexture(_renderer,
+		SDL_PIXELFORMAT_RGBA8888,
+		SDL_TEXTUREACCESS_TARGET,
+		width, height);
 	_imageInfo->frameWidth = width;
 	_imageInfo->frameHeight = height;
 	_imageInfo->width = width;
 	_imageInfo->height = height;
 
 	_fileName = NULL;
-
 	_trans = FALSE;
-	_transColor = RGB(0, 0, 0);
+	_transColor = 0;
 
-	//알파블렌드 셋팅
-	_blendFunc.BlendFlags = 0;
-	_blendFunc.AlphaFormat = 0;
-	_blendFunc.BlendOp = AC_SRC_OVER;
-
-	_blendImage = new IMAGE_INFO;
-	_blendImage->loadType = LOAD_EMPTY;
-	_blendImage->resID = 0;
-	_blendImage->hMemDC = CreateCompatibleDC(hdc);
-	_blendImage->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, WINSIZEX, WINSIZEY);
-	_blendImage->hOBit = (HBITMAP)SelectObject(_blendImage->hMemDC, _blendImage->hBit);
-	_blendImage->width = WINSIZEX;
-	_blendImage->height = WINSIZEY;
-
-
-	if (_imageInfo->hBit == NULL)
+	if (_imageInfo->texture == NULL)
 	{
 		release();
-
 		return E_FAIL;
 	}
-
-	ReleaseDC(_hWnd, hdc);
 
 	return S_OK;
 }
 
-//파일로부터 이미지 초기화
-HRESULT image::init(const char* fileName, int width, int height,
+int image::init(const char* fileName, int width, int height,
 	BOOL trans, COLORREF transColor)
 {
 	if (fileName == NULL) return E_FAIL;
 
-	//이미지 정보가 널이 아니라면(이미지가 들어있다면) 해제해라
 	if (_imageInfo != NULL) release();
-
-	HDC hdc = GetDC(_hWnd);
 
 	_imageInfo = new IMAGE_INFO;
 	_imageInfo->loadType = LOAD_FILE;
 	_imageInfo->resID = 0;
-	_imageInfo->hMemDC = CreateCompatibleDC(hdc);	//빈 DC영역을 생성
-	_imageInfo->hBit = (HBITMAP)LoadImage(_hInstance, fileName, IMAGE_BITMAP, width, height, LR_LOADFROMFILE);
-	_imageInfo->hOBit = (HBITMAP)SelectObject(_imageInfo->hMemDC, _imageInfo->hBit);
+
+	char fixedPath[256];
+	strncpy(fixedPath, fileName, sizeof(fixedPath) - 1);
+	fixedPath[sizeof(fixedPath) - 1] = '\0';
+	normalizePath(fixedPath);
+
+	SDL_Surface* surface = IMG_Load(fixedPath);
+	if (!surface)
+	{
+		release();
+		return E_FAIL;
+	}
+
+	if (trans)
+	{
+		Uint32 colorKey = SDL_MapRGB(surface->format,
+			(transColor >> 16) & 0xFF,
+			(transColor >> 8) & 0xFF,
+			transColor & 0xFF);
+		SDL_SetColorKey(surface, SDL_TRUE, colorKey);
+	}
+
+	_imageInfo->texture = SDL_CreateTextureFromSurface(_renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (!_imageInfo->texture)
+	{
+		release();
+		return E_FAIL;
+	}
+
 	_imageInfo->frameWidth = width;
 	_imageInfo->frameHeight = height;
 	_imageInfo->width = width;
 	_imageInfo->height = height;
 
 	int len = strlen(fileName);
-
-	_fileName = new CHAR[len + 1];
-	strcpy_s(_fileName, len + 1, fileName);
+	_fileName = new char[len + 1];
+	strcpy(_fileName, fixedPath);
 
 	_trans = trans;
 	_transColor = transColor;
 
-	//알파블렌드 셋팅
-	_blendFunc.BlendFlags = 0;
-	_blendFunc.AlphaFormat = 0;
-	_blendFunc.BlendOp = AC_SRC_OVER;
-
-	_blendImage = new IMAGE_INFO;
-	_blendImage->loadType = LOAD_EMPTY;
-	_blendImage->resID = 0;
-	_blendImage->hMemDC = CreateCompatibleDC(hdc);
-	_blendImage->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, WINSIZEX, WINSIZEY);
-	_blendImage->hOBit = (HBITMAP)SelectObject(_blendImage->hMemDC, _blendImage->hBit);
-	_blendImage->width = WINSIZEX;
-	_blendImage->height = WINSIZEY;
-
-	if (_imageInfo->hBit == NULL)
-	{
-		release();
-
-		return E_FAIL;
-	}
-
-	ReleaseDC(_hWnd, hdc);
-
 	return S_OK;
 }
 
-
-HRESULT image::init(const char* fileName, float x, float y, int width, int height,
+int image::init(const char* fileName, float x, float y, int width, int height,
 	BOOL trans, COLORREF transColor)
 {
 	if (fileName == NULL) return E_FAIL;
 
-	//이미지 정보가 널이 아니라면(이미지가 들어있다면) 해제해라
 	if (_imageInfo != NULL) release();
-
-	HDC hdc = GetDC(_hWnd);
 
 	_imageInfo = new IMAGE_INFO;
 	_imageInfo->loadType = LOAD_FILE;
 	_imageInfo->resID = 0;
-	_imageInfo->hMemDC = CreateCompatibleDC(hdc);	//빈 DC영역을 생성
-	_imageInfo->hBit = (HBITMAP)LoadImage(_hInstance, fileName, IMAGE_BITMAP, width, height, LR_LOADFROMFILE);
-	_imageInfo->hOBit = (HBITMAP)SelectObject(_imageInfo->hMemDC, _imageInfo->hBit);
+
+	char fixedPath[256];
+	strncpy(fixedPath, fileName, sizeof(fixedPath) - 1);
+	fixedPath[sizeof(fixedPath) - 1] = '\0';
+	normalizePath(fixedPath);
+
+	SDL_Surface* surface = IMG_Load(fixedPath);
+	if (!surface)
+	{
+		release();
+		return E_FAIL;
+	}
+
+	if (trans)
+	{
+		Uint32 colorKey = SDL_MapRGB(surface->format,
+			(transColor >> 16) & 0xFF,
+			(transColor >> 8) & 0xFF,
+			transColor & 0xFF);
+		SDL_SetColorKey(surface, SDL_TRUE, colorKey);
+	}
+
+	_imageInfo->texture = SDL_CreateTextureFromSurface(_renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (!_imageInfo->texture)
+	{
+		release();
+		return E_FAIL;
+	}
+
 	_imageInfo->frameWidth = width;
 	_imageInfo->frameHeight = height;
 	_imageInfo->x = x;
@@ -148,56 +154,56 @@ HRESULT image::init(const char* fileName, float x, float y, int width, int heigh
 	_imageInfo->height = height;
 
 	int len = strlen(fileName);
-
-	_fileName = new CHAR[len + 1];
-	strcpy_s(_fileName, len + 1, fileName);
+	_fileName = new char[len + 1];
+	strcpy(_fileName, fixedPath);
 
 	_trans = trans;
 	_transColor = transColor;
 
-	//알파블렌드 셋팅
-	_blendFunc.BlendFlags = 0;
-	_blendFunc.AlphaFormat = 0;
-	_blendFunc.BlendOp = AC_SRC_OVER;
-
-	_blendImage = new IMAGE_INFO;
-	_blendImage->loadType = LOAD_EMPTY;
-	_blendImage->resID = 0;
-	_blendImage->hMemDC = CreateCompatibleDC(hdc);
-	_blendImage->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, WINSIZEX, WINSIZEY);
-	_blendImage->hOBit = (HBITMAP)SelectObject(_blendImage->hMemDC, _blendImage->hBit);
-	_blendImage->width = WINSIZEX;
-	_blendImage->height = WINSIZEY;
-
-	if (_imageInfo->hBit == NULL)
-	{
-		release();
-
-		return E_FAIL;
-	}
-
-	ReleaseDC(_hWnd, hdc);
-
-
 	return S_OK;
 }
 
-HRESULT image::init(const char* fileName, float x, float y, int width, int height,
+int image::init(const char* fileName, float x, float y, int width, int height,
 	int frameX, int frameY, BOOL trans, COLORREF transColor)
 {
 	if (fileName == NULL) return E_FAIL;
 
-	//이미지 정보가 널이 아니라면(이미지가 들어있다면) 해제해라
 	if (_imageInfo != NULL) release();
-
-	HDC hdc = GetDC(_hWnd);
 
 	_imageInfo = new IMAGE_INFO;
 	_imageInfo->loadType = LOAD_FILE;
 	_imageInfo->resID = 0;
-	_imageInfo->hMemDC = CreateCompatibleDC(hdc);	//빈 DC영역을 생성
-	_imageInfo->hBit = (HBITMAP)LoadImage(_hInstance, fileName, IMAGE_BITMAP, width, height, LR_LOADFROMFILE);
-	_imageInfo->hOBit = (HBITMAP)SelectObject(_imageInfo->hMemDC, _imageInfo->hBit);
+
+	char fixedPath[256];
+	strncpy(fixedPath, fileName, sizeof(fixedPath) - 1);
+	fixedPath[sizeof(fixedPath) - 1] = '\0';
+	normalizePath(fixedPath);
+
+	SDL_Surface* surface = IMG_Load(fixedPath);
+	if (!surface)
+	{
+		release();
+		return E_FAIL;
+	}
+
+	if (trans)
+	{
+		Uint32 colorKey = SDL_MapRGB(surface->format,
+			(transColor >> 16) & 0xFF,
+			(transColor >> 8) & 0xFF,
+			transColor & 0xFF);
+		SDL_SetColorKey(surface, SDL_TRUE, colorKey);
+	}
+
+	_imageInfo->texture = SDL_CreateTextureFromSurface(_renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (!_imageInfo->texture)
+	{
+		release();
+		return E_FAIL;
+	}
+
 	_imageInfo->x = x - (width / 2);
 	_imageInfo->y = y - (height / 2);
 	_imageInfo->width = width;
@@ -209,57 +215,57 @@ HRESULT image::init(const char* fileName, float x, float y, int width, int heigh
 	_imageInfo->maxFrameX = frameX - 1;
 	_imageInfo->maxFrameY = frameY - 1;
 
-
 	int len = strlen(fileName);
-
-	_fileName = new CHAR[len + 1];
-	strcpy_s(_fileName, len + 1, fileName);
+	_fileName = new char[len + 1];
+	strcpy(_fileName, fixedPath);
 
 	_trans = trans;
 	_transColor = transColor;
 
-	//알파블렌드 셋팅
-	_blendFunc.BlendFlags = 0;
-	_blendFunc.AlphaFormat = 0;
-	_blendFunc.BlendOp = AC_SRC_OVER;
-
-	_blendImage = new IMAGE_INFO;
-	_blendImage->loadType = LOAD_EMPTY;
-	_blendImage->resID = 0;
-	_blendImage->hMemDC = CreateCompatibleDC(hdc);
-	_blendImage->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, WINSIZEX, WINSIZEY);
-	_blendImage->hOBit = (HBITMAP)SelectObject(_blendImage->hMemDC, _blendImage->hBit);
-	_blendImage->width = WINSIZEX;
-	_blendImage->height = WINSIZEY;
-
-	if (_imageInfo->hBit == NULL)
-	{
-		release();
-
-		return E_FAIL;
-	}
-
-	ReleaseDC(_hWnd, hdc);
-
 	return S_OK;
 }
 
-HRESULT image::init(const char* fileName, int width, int height,
+int image::init(const char* fileName, int width, int height,
 	int frameX, int frameY, BOOL trans, COLORREF transColor)
 {
 	if (fileName == NULL) return E_FAIL;
 
-	//이미지 정보가 널이 아니라면(이미지가 들어있다면) 해제해라
 	if (_imageInfo != NULL) release();
-
-	HDC hdc = GetDC(_hWnd);
 
 	_imageInfo = new IMAGE_INFO;
 	_imageInfo->loadType = LOAD_FILE;
 	_imageInfo->resID = 0;
-	_imageInfo->hMemDC = CreateCompatibleDC(hdc);	//빈 DC영역을 생성
-	_imageInfo->hBit = (HBITMAP)LoadImage(_hInstance, fileName, IMAGE_BITMAP, width, height, LR_LOADFROMFILE);
-	_imageInfo->hOBit = (HBITMAP)SelectObject(_imageInfo->hMemDC, _imageInfo->hBit);
+
+	char fixedPath[256];
+	strncpy(fixedPath, fileName, sizeof(fixedPath) - 1);
+	fixedPath[sizeof(fixedPath) - 1] = '\0';
+	normalizePath(fixedPath);
+
+	SDL_Surface* surface = IMG_Load(fixedPath);
+	if (!surface)
+	{
+		release();
+		return E_FAIL;
+	}
+
+	if (trans)
+	{
+		Uint32 colorKey = SDL_MapRGB(surface->format,
+			(transColor >> 16) & 0xFF,
+			(transColor >> 8) & 0xFF,
+			transColor & 0xFF);
+		SDL_SetColorKey(surface, SDL_TRUE, colorKey);
+	}
+
+	_imageInfo->texture = SDL_CreateTextureFromSurface(_renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (!_imageInfo->texture)
+	{
+		release();
+		return E_FAIL;
+	}
+
 	_imageInfo->width = width;
 	_imageInfo->height = height;
 	_imageInfo->currentFrameX = 0;
@@ -269,37 +275,12 @@ HRESULT image::init(const char* fileName, int width, int height,
 	_imageInfo->maxFrameX = frameX - 1;
 	_imageInfo->maxFrameY = frameY - 1;
 
-
 	int len = strlen(fileName);
-
-	_fileName = new CHAR[len + 1];
-	strcpy_s(_fileName, len + 1, fileName);
+	_fileName = new char[len + 1];
+	strcpy(_fileName, fixedPath);
 
 	_trans = trans;
 	_transColor = transColor;
-
-	//알파블렌드 셋팅
-	_blendFunc.BlendFlags = 0;
-	_blendFunc.AlphaFormat = 0;
-	_blendFunc.BlendOp = AC_SRC_OVER;
-
-	_blendImage = new IMAGE_INFO;
-	_blendImage->loadType = LOAD_EMPTY;
-	_blendImage->resID = 0;
-	_blendImage->hMemDC = CreateCompatibleDC(hdc);
-	_blendImage->hBit = (HBITMAP)CreateCompatibleBitmap(hdc, WINSIZEX, WINSIZEY);
-	_blendImage->hOBit = (HBITMAP)SelectObject(_blendImage->hMemDC, _blendImage->hBit);
-	_blendImage->width = WINSIZEX;
-	_blendImage->height = WINSIZEY;
-
-	if (_imageInfo->hBit == NULL)
-	{
-		release();
-
-		return E_FAIL;
-	}
-
-	ReleaseDC(_hWnd, hdc);
 
 	return S_OK;
 }
@@ -308,245 +289,146 @@ void image::release(void)
 {
 	if (_imageInfo)
 	{
-		SelectObject(_imageInfo->hMemDC, _imageInfo->hOBit);
-		DeleteObject(_imageInfo->hBit);
-		DeleteDC(_imageInfo->hMemDC);
-
-		SelectObject(_blendImage->hMemDC, _blendImage->hOBit);
-		DeleteObject(_blendImage->hBit);
-		DeleteDC(_blendImage->hMemDC);
+		if (_imageInfo->texture)
+		{
+			SDL_DestroyTexture(_imageInfo->texture);
+			_imageInfo->texture = NULL;
+		}
 
 		SAFE_DELETE(_imageInfo);
 		SAFE_DELETE(_fileName);
-		SAFE_DELETE(_blendImage);
 
 		_trans = false;
-		_transColor = RGB(0, 0, 0);
+		_transColor = 0;
 	}
 }
-
 
 void image::setTransColor(BOOL trans, COLORREF transColor)
 {
 	_trans = trans;
 	_transColor = transColor;
-
 }
 
-void image::render(HDC hdc)
+void image::render(SDL_Renderer* renderer)
 {
-	if (_trans)
-	{
-		//특정색상을 DC영역에서 제외해주는 함수
-		GdiTransparentBlt(hdc,		//복사될 DC영역
-			_imageInfo->x,			//복사될 DC영역에 뿌려줄 좌표
-			_imageInfo->y,
-			_imageInfo->width,		//복사될 가로 크기
-			_imageInfo->height,		//복사될 세로 크기
-			_imageInfo->hMemDC,		//복사할 DC
-			0, 0,					//복사할 좌표
-			_imageInfo->width,		//복사할 가로 크기
-			_imageInfo->height,		//복사할 세로 크기
-			_transColor);			//제외할 칼라
-	}
-	else
-	{
-		//백버퍼에 있는 걸 앞으로 고속복사해주는 함수
-		BitBlt(hdc, _imageInfo->x, _imageInfo->y,
-			_imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, SRCCOPY);
-	}
+	SDL_Rect dest;
+	dest.x = (int)_imageInfo->x;
+	dest.y = (int)_imageInfo->y;
+	dest.w = _imageInfo->width;
+	dest.h = _imageInfo->height;
+
+	SDL_RenderCopy(renderer, _imageInfo->texture, NULL, &dest);
 }
 
-
-//이미지 렌더, DC영역, 뿌릴좌표X, 뿌릴좌표Y
-void image::render(HDC hdc, int destX, int destY)
+void image::render(SDL_Renderer* renderer, int destX, int destY)
 {
-	if (_trans)
-	{
-		//특정색상을 DC영역에서 제외해주는 함수
-		GdiTransparentBlt(hdc,		//복사될 DC영역
-			destX,					//복사될 DC영역에 뿌려줄 좌표
-			destY,
-			_imageInfo->width,		//복사될 가로 크기
-			_imageInfo->height,		//복사될 세로 크기
-			_imageInfo->hMemDC,		//복사할 DC
-			0, 0,					//복사할 좌표
-			_imageInfo->width,		//복사할 가로 크기
-			_imageInfo->height,		//복사할 세로 크기
-			_transColor);			//제외할 칼라
-	}
-	else
-	{
-		//백버퍼에 있는 걸 앞으로 고속복사해주는 함수
-		BitBlt(hdc, destX, destY,
-			_imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, SRCCOPY);
-	}
-}
-//뿌릴 곳X, Y           뿌려올 곳 X, Y(left, top)  가로,        세로
-void image::render(HDC hdc, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight)
-{
-	if (_trans)
-	{
-		//특정색상을 DC영역에서 제외해주는 함수
-		GdiTransparentBlt(hdc,		//복사될 DC영역
-			destX,					//복사될 DC영역에 뿌려줄 좌표
-			destY,
-			sourWidth,				//복사될 가로 크기
-			sourHeight,				//복사될 세로 크기
-			_imageInfo->hMemDC,		//복사할 DC
-			sourX, sourY,			//복사할 좌표
-			sourWidth,				//복사할 가로 크기
-			sourHeight,				//복사할 세로 크기
-			_transColor);			//제외할 칼라
-	}
-	else
-	{
-		//백버퍼에 있는 걸 앞으로 고속복사해주는 함수
-		BitBlt(hdc, destX, destY,
-			sourWidth, sourHeight,
-			_imageInfo->hMemDC, sourX, sourY, SRCCOPY);
-	}
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->width;
+	dest.h = _imageInfo->height;
+
+	SDL_RenderCopy(renderer, _imageInfo->texture, NULL, &dest);
 }
 
-void image::frameRender(HDC hdc, int destX, int destY)
+void image::render(SDL_Renderer* renderer, int destX, int destY,
+	int sourX, int sourY, int sourWidth, int sourHeight)
 {
-	if (_trans)
-	{
-		GdiTransparentBlt(hdc,
-			destX,
-			destY,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_transColor);
-	}
-	else
-	{
-		BitBlt(hdc, destX, destY,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			SRCCOPY);
-	}
+	SDL_Rect src = { sourX, sourY, sourWidth, sourHeight };
+	SDL_Rect dest = { destX, destY, sourWidth, sourHeight };
+
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
 }
 
-void image::frameRender(HDC hdc, int destX, int destY, int currentFrameX, int currentFrameY)
+void image::frameRender(SDL_Renderer* renderer, int destX, int destY)
+{
+	SDL_Rect src;
+	src.x = _imageInfo->currentFrameX * _imageInfo->frameWidth;
+	src.y = _imageInfo->currentFrameY * _imageInfo->frameHeight;
+	src.w = _imageInfo->frameWidth;
+	src.h = _imageInfo->frameHeight;
+
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->frameWidth;
+	dest.h = _imageInfo->frameHeight;
+
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
+}
+
+void image::frameRender(SDL_Renderer* renderer, int destX, int destY,
+	int currentFrameX, int currentFrameY)
 {
 	_imageInfo->currentFrameX = currentFrameX;
 	_imageInfo->currentFrameY = currentFrameY;
 
-	if (_trans)
-	{
-		GdiTransparentBlt(hdc,
-			destX,
-			destY,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_transColor);
-	}
-	else
-	{
-		BitBlt(hdc, destX, destY,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			SRCCOPY);
-	}
+	SDL_Rect src;
+	src.x = currentFrameX * _imageInfo->frameWidth;
+	src.y = currentFrameY * _imageInfo->frameHeight;
+	src.w = _imageInfo->frameWidth;
+	src.h = _imageInfo->frameHeight;
+
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->frameWidth;
+	dest.h = _imageInfo->frameHeight;
+
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
 }
-void image::alphaFrameRender(HDC hdc, int destX, int destY, BYTE alpha)
+
+void image::alphaFrameRender(SDL_Renderer* renderer, int destX, int destY, BYTE alpha)
 {
-	_blendFunc.SourceConstantAlpha = alpha;
+	SDL_SetTextureAlphaMod(_imageInfo->texture, alpha);
 
-	if (_trans)
-	{
-		BitBlt(_blendImage->hMemDC, 0, 0, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			hdc, destX, destY, SRCCOPY);
+	SDL_Rect src;
+	src.x = _imageInfo->currentFrameX * _imageInfo->frameWidth;
+	src.y = _imageInfo->currentFrameY * _imageInfo->frameHeight;
+	src.w = _imageInfo->frameWidth;
+	src.h = _imageInfo->frameHeight;
 
-		GdiTransparentBlt(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_transColor);
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->frameWidth;
+	dest.h = _imageInfo->frameHeight;
 
-		AlphaBlend(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_blendImage->hMemDC,
-			0, 0,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_blendFunc);
-	}
-	else
-	{
-		AlphaBlend(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_blendImage->hMemDC, _imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_blendFunc);
-	}
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
+
+	SDL_SetTextureAlphaMod(_imageInfo->texture, 255);
 }
 
-void image::alphaFrameRender(HDC hdc, int destX, int destY, int currentFrameX, int currentFrameY, BYTE alpha)
+void image::alphaFrameRender(SDL_Renderer* renderer, int destX, int destY,
+	int currentFrameX, int currentFrameY, BYTE alpha)
 {
 	_imageInfo->currentFrameX = currentFrameX;
 	_imageInfo->currentFrameY = currentFrameY;
 
-	_blendFunc.SourceConstantAlpha = alpha;
+	SDL_SetTextureAlphaMod(_imageInfo->texture, alpha);
 
-	if (_trans)
-	{
-		BitBlt(_blendImage->hMemDC, 0, 0, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			hdc, destX, destY, SRCCOPY);
+	SDL_Rect src;
+	src.x = currentFrameX * _imageInfo->frameWidth;
+	src.y = currentFrameY * _imageInfo->frameHeight;
+	src.w = _imageInfo->frameWidth;
+	src.h = _imageInfo->frameHeight;
 
-		GdiTransparentBlt(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_imageInfo->hMemDC,
-			_imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_transColor);
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->frameWidth;
+	dest.h = _imageInfo->frameHeight;
 
-		AlphaBlend(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_blendImage->hMemDC,
-			0, 0,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_blendFunc);
-	}
-	else
-	{
-		AlphaBlend(hdc, destX, destY, _imageInfo->frameWidth, _imageInfo->frameHeight,
-			_blendImage->hMemDC, _imageInfo->currentFrameX * _imageInfo->frameWidth,
-			_imageInfo->currentFrameY * _imageInfo->frameHeight,
-			_imageInfo->frameWidth,
-			_imageInfo->frameHeight,
-			_blendFunc);
-	}
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
+
+	SDL_SetTextureAlphaMod(_imageInfo->texture, 255);
 }
-void image::loopRender(HDC hdc, const LPRECT drawArea, int offSetX, int offSetY)
+
+void image::loopRender(SDL_Renderer* renderer, const RECT* drawArea, int offSetX, int offSetY)
 {
-	//정밀 보정
 	if (offSetX < 0) offSetX = _imageInfo->width + (offSetX % _imageInfo->width);
 	if (offSetY < 0) offSetY = _imageInfo->height + (offSetY % _imageInfo->height);
 
-	//그려지는(복사되어오는) 이미지의 영역
 	RECT rcSour;
 	int sourWidth;
 	int sourHeight;
@@ -588,91 +470,59 @@ void image::loopRender(HDC hdc, const LPRECT drawArea, int offSetX, int offSetY)
 			rcDest.left = x + drawAreaX;
 			rcDest.right = rcDest.left + sourWidth;
 
-
-			render(hdc, rcDest.left, rcDest.top,
+			render(renderer, rcDest.left, rcDest.top,
 				rcSour.left, rcSour.top,
 				rcSour.right - rcSour.left,
 				rcSour.bottom - rcSour.top);
 		}
 	}
-
 }
 
-void image::alphaRender(HDC hdc, BYTE alpha)
+void image::alphaRender(SDL_Renderer* renderer, BYTE alpha)
 {
-	//0 ~ 255
-	_blendFunc.SourceConstantAlpha = alpha;
+	SDL_SetTextureAlphaMod(_imageInfo->texture, alpha);
 
-	if (_trans)
-	{
-		BitBlt(_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height,
-			hdc, _imageInfo->x, _imageInfo->y, SRCCOPY);
+	SDL_Rect dest;
+	dest.x = (int)_imageInfo->x;
+	dest.y = (int)_imageInfo->y;
+	dest.w = _imageInfo->width;
+	dest.h = _imageInfo->height;
 
-		GdiTransparentBlt(_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _transColor);
+	SDL_RenderCopy(renderer, _imageInfo->texture, NULL, &dest);
 
-		AlphaBlend(hdc, _imageInfo->x, _imageInfo->y, _imageInfo->width, _imageInfo->height,
-			_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _blendFunc);
-
-	}
-	else
-	{
-		AlphaBlend(hdc, _imageInfo->x, _imageInfo->y, _imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _blendFunc);
-
-	}
+	SDL_SetTextureAlphaMod(_imageInfo->texture, 255);
 }
 
-void image::alphaRender(HDC hdc, int destX, int destY, BYTE alpha)
+void image::alphaRender(SDL_Renderer* renderer, int destX, int destY, BYTE alpha)
 {
-	_blendFunc.SourceConstantAlpha = alpha;
+	SDL_SetTextureAlphaMod(_imageInfo->texture, alpha);
 
-	if (_trans)
-	{
-		BitBlt(_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height,
-			hdc, destX, destY, SRCCOPY);
+	SDL_Rect dest;
+	dest.x = destX;
+	dest.y = destY;
+	dest.w = _imageInfo->width;
+	dest.h = _imageInfo->height;
 
-		GdiTransparentBlt(_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _transColor);
+	SDL_RenderCopy(renderer, _imageInfo->texture, NULL, &dest);
 
-		AlphaBlend(hdc, destX, destY, _imageInfo->width, _imageInfo->height,
-			_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _blendFunc);
-
-	}
-	else
-	{
-		AlphaBlend(hdc, destX, destY, _imageInfo->width, _imageInfo->height,
-			_imageInfo->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height, _blendFunc);
-
-	}
+	SDL_SetTextureAlphaMod(_imageInfo->texture, 255);
 }
 
-void image::alphaRender(HDC hdc, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight, BYTE alpha)
+void image::alphaRender(SDL_Renderer* renderer, int destX, int destY,
+	int sourX, int sourY, int sourWidth, int sourHeight, BYTE alpha)
 {
-	_blendFunc.SourceConstantAlpha = alpha;
+	SDL_SetTextureAlphaMod(_imageInfo->texture, alpha);
 
-	if (_trans)
-	{
-		BitBlt(_blendImage->hMemDC, 0, 0, _imageInfo->width, _imageInfo->height,
-			hdc, destX, destY, SRCCOPY);
+	SDL_Rect src = { sourX, sourY, sourWidth, sourHeight };
+	SDL_Rect dest = { destX, destY, sourWidth, sourHeight };
 
-		GdiTransparentBlt(_blendImage->hMemDC, 0, 0, sourWidth, sourHeight,
-			_imageInfo->hMemDC, sourX, sourY, sourWidth, sourHeight, _transColor);
+	SDL_RenderCopy(renderer, _imageInfo->texture, &src, &dest);
 
-		AlphaBlend(hdc, destX, destY, sourWidth, sourHeight,
-			_blendImage->hMemDC, 0, 0, sourWidth, sourHeight, _blendFunc);
-
-	}
-	else
-	{
-		AlphaBlend(hdc, destX, destY, sourWidth, sourHeight,
-			_imageInfo->hMemDC, sourX, sourY, sourWidth, sourHeight, _blendFunc);
-
-	}
+	SDL_SetTextureAlphaMod(_imageInfo->texture, 255);
 }
 
-void image::aniRender(HDC hdc, int destX, int destY, animation* ani)
+void image::aniRender(SDL_Renderer* renderer, int destX, int destY, animation* ani)
 {
-	render(hdc, destX, destY, ani->getFramePos().x, ani->getFramePos().y, ani->getFrameWidth(), ani->getFrameHeight());
-
+	render(renderer, destX, destY, ani->getFramePos().x, ani->getFramePos().y,
+		ani->getFrameWidth(), ani->getFrameHeight());
 }

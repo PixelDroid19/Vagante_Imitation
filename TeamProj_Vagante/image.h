@@ -1,116 +1,96 @@
 #pragma once
 #include "animation.h"
 
-//==================================
-// ## 2017.08.22 ## image Class ##
-//==================================
-
 class image
 {
 public:
 	enum IMAGE_LOAD_KIND
 	{
-		LOAD_RESOURCE,		//리소스로부터
-		LOAD_FILE,			//파일로부터
-		LOAD_EMPTY,			//빈 비트맵 파일
+		LOAD_RESOURCE,
+		LOAD_FILE,
+		LOAD_EMPTY,
 		LOAD_END
 	};
 
 	typedef struct tagImageInfo
 	{
-		DWORD resID;		//리소스로부터 정보를 가져올땐 등록된 아이디로부터 가져오는데 그때 쓰임
-		HDC hMemDC;			//메모리 DC (DC영역의 메모리(픽셀값등이 있음))
-		HBITMAP hBit;		//비트맵
-		HBITMAP hOBit;		//올드 비트맵(SelectObject)
-		float	x;				//시작좌표 X
-		float	y;				//시작좌표 Y
-		int		width;			//가로 사이즈
-		int		height;			//세로 사이즈
-		int		currentFrameX;	//현재 프레임 번호 X
-		int		currentFrameY;	//현재 프레임 번호 Y
-		int		maxFrameX;		//맥스 프레임 X
-		int		maxFrameY;		//맥스 프레임 Y
-		int		frameWidth;		//프레임 한장 가로크기
-		int		frameHeight;	//프레임 한장 세로크기
-		BYTE	loadType;
+		int resID;
+		SDL_Texture* texture;
+		float x;
+		float y;
+		int width;
+		int height;
+		int currentFrameX;
+		int currentFrameY;
+		int maxFrameX;
+		int maxFrameY;
+		int frameWidth;
+		int frameHeight;
+		BYTE loadType;
 
 		tagImageInfo()
 		{
-			resID			= 0;
-			hMemDC			= NULL;
-			hBit			= NULL;
-			hOBit			= NULL;
-			x				= 0;
-			y				= 0;
-			width			= 0;
-			height			= 0;
-			currentFrameX	= 0;
-			currentFrameY	= 0;
-			maxFrameX		= 0;
-			maxFrameY		= 0;
-			frameWidth		= 0;
-			frameHeight		= 0;
-			loadType		= LOAD_RESOURCE;
+			resID = 0;
+			texture = NULL;
+			x = 0;
+			y = 0;
+			width = 0;
+			height = 0;
+			currentFrameX = 0;
+			currentFrameY = 0;
+			maxFrameX = 0;
+			maxFrameY = 0;
+			frameWidth = 0;
+			frameHeight = 0;
+			loadType = LOAD_RESOURCE;
 		}
 	}IMAGE_INFO, *LPIMAGE_INFO;
 
 private:
-	LPIMAGE_INFO	_imageInfo;
-	CHAR*			_fileName;
-	BOOL			_trans;
-	COLORREF		_transColor;
-	
-	BLENDFUNCTION	_blendFunc;
-	LPIMAGE_INFO	_blendImage;
+	LPIMAGE_INFO _imageInfo;
+	char* _fileName;
+	BOOL _trans;
+	COLORREF _transColor;
 
 public:
 	image();
 	~image();
 
-	//빈 비트맵 이미지 초기화
-	HRESULT init(int width, int height, BOOL trans = FALSE, COLORREF transColor = FALSE);
-	//파일로부터 이미지 초기화
-	HRESULT init(const char* fileName, int width, int height,
-		BOOL trans = FALSE, COLORREF transColor = FALSE);
+	int init(int width, int height, BOOL trans = FALSE, COLORREF transColor = 0);
+	int init(const char* fileName, int width, int height,
+		BOOL trans = FALSE, COLORREF transColor = 0);
 
-	HRESULT init(const char* fileName, float x, float y, int width, int height,
-		BOOL trans = FALSE, COLORREF transColor = FALSE);
+	int init(const char* fileName, float x, float y, int width, int height,
+		BOOL trans = FALSE, COLORREF transColor = 0);
 
-	HRESULT init(const char* fileName, float x, float y, int width, int height,
+	int init(const char* fileName, float x, float y, int width, int height,
 		int frameX, int frameY, BOOL trans, COLORREF transColor);
 
-	HRESULT init(const char* fileName, int width, int height,
+	int init(const char* fileName, int width, int height,
 		int frameX, int frameY, BOOL trans, COLORREF transColor);
 
 	void release(void);
 
 	void setTransColor(BOOL trans, COLORREF transColor);
 
-	void render(HDC hdc);
+	void render(SDL_Renderer* renderer);
+	void render(SDL_Renderer* renderer, int destX, int destY);
+	void render(SDL_Renderer* renderer, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight);
 
-	//이미지 렌더, DC영역, 뿌릴좌표X, 뿌릴좌표Y
-	void render(HDC hdc, int destX, int destY);
-	void render(HDC hdc, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight);
-	
-	void frameRender(HDC hdc, int destX, int destY);
-	void frameRender(HDC hdc, int destX, int destY, int currentFrameX, int currentFrameY);
-	void alphaFrameRender(HDC hdc, int destX, int destY, BYTE alpha);
-	void alphaFrameRender(HDC hdc, int destX, int destY, int currentFrameX, int currentFrameY, BYTE alpha);
+	void frameRender(SDL_Renderer* renderer, int destX, int destY);
+	void frameRender(SDL_Renderer* renderer, int destX, int destY, int currentFrameX, int currentFrameY);
+	void alphaFrameRender(SDL_Renderer* renderer, int destX, int destY, BYTE alpha);
+	void alphaFrameRender(SDL_Renderer* renderer, int destX, int destY, int currentFrameX, int currentFrameY, BYTE alpha);
 
-	void loopRender(HDC hdc, const LPRECT drawArea, int offSetX, int offSetY);
+	void loopRender(SDL_Renderer* renderer, const RECT* drawArea, int offSetX, int offSetY);
 
-	void alphaRender(HDC hdc, BYTE alpha);
-	void alphaRender(HDC hdc, int destX, int destY, BYTE alpha);
-	void alphaRender(HDC hdc, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight, BYTE alpha);
+	void alphaRender(SDL_Renderer* renderer, BYTE alpha);
+	void alphaRender(SDL_Renderer* renderer, int destX, int destY, BYTE alpha);
+	void alphaRender(SDL_Renderer* renderer, int destX, int destY, int sourX, int sourY, int sourWidth, int sourHeight, BYTE alpha);
 
-	void aniRender(HDC hdc, int destX, int destY, animation* ani);
+	void aniRender(SDL_Renderer* renderer, int destX, int destY, animation* ani);
 
-	//메모리 디씨 접근자
-	inline HDC getMemDC() { return _imageInfo->hMemDC; }
-
-	//=============================================================
-	// 이미지 조작을 쉽게하기 위한 getter, setter
-	//=============================================================
+	inline SDL_Texture* getTexture() { return _imageInfo->texture; }
 
 	inline void setX(float x) { _imageInfo->x = x; }
 	inline float getX() { return _imageInfo->x; }
@@ -136,7 +116,6 @@ public:
 			_imageInfo->y + (_imageInfo->frameHeight / 2);
 	}
 
-
 	inline void setFrameX(int frameX)
 	{
 		_imageInfo->currentFrameX = frameX;
@@ -158,7 +137,6 @@ public:
 	inline int getFrameWidth(void) { return _imageInfo->frameWidth; }
 	inline int getFrameHeight(void) { return _imageInfo->frameHeight; }
 
-	inline int getWidth(void) {return _imageInfo->width; }
-	inline int getHeight(void) {return _imageInfo->height; }
+	inline int getWidth(void) { return _imageInfo->width; }
+	inline int getHeight(void) { return _imageInfo->height; }
 };
-

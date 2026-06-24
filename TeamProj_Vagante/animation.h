@@ -4,10 +4,6 @@
 typedef void(*CALLBACK_FUNCTION)(void);
 typedef void(*CALLBACK_FUNCTION_PARAMETER)(void*);
 
-//void == 텅빈 void* 텅빈 곳을 가르키는 포인터
-//장점 : 뭐든지 다 담을 수 있다
-//단점 : 뭐든지 다 담을 수 있다, 무슨 형인지 자료형 선언을 해줘야함
-
 class animation
 {
 public:
@@ -15,20 +11,19 @@ public:
 	typedef vector<int> vPlayList;
 
 private:
-	int			_frameNum;			//몇 프레임인지
+	int			_frameNum;
+	vFrameList	_frameList;
+	vPlayList	_playList;
 
-	vFrameList	_frameList;			//애니메이션 프레임 리스트
-	vPlayList	_playList;			//애니메이션 플레이 인덱스 담을 리스트
+	int			_frameWidth;
+	int			_frameHeight;
 
-	int			_frameWidth;		//프레임 가로크기
-	int			_frameHeight;		//프레임 세로크기
+	BOOL		_loop;
 
-	BOOL		_loop;				//애니메이션 루프 여부
-
-	float		_frameUpdateSec;	//프레임 갱신 속도
+	float		_frameUpdateSec;
 	float		_elapsedSec;
 
-	DWORD		_nowPlayIndex;		//현재 재생 중인 플레이 인덱스
+	DWORD		_nowPlayIndex;
 	BOOL		_play;
 
 	void* _obj;
@@ -67,7 +62,4 @@ public:
 	inline POINT getFramePos(void) { return _frameList[_playList[_nowPlayIndex]]; }
 	inline int getFrameWidth(void) { return _frameWidth; }
 	inline int getFrameHeight(void) { return _frameHeight; }
-
-
 };
-
