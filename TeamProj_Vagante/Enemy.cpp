@@ -19,42 +19,42 @@ HRESULT Enemy::init()
 }
 HRESULT Enemy::init(POINT point, float minCog, float maxCog)
 {
-	//자식클래스에서 각자 초기화하기
-	//최소 인식범위, 최대 인식범위
+	//Initialize enemy recognition range
+	//Set min/max recognition range
 	_minCog = minCog;
 	_maxCog = maxCog;
-	//현재 위치
+	//Set position
 	_pointx = point.x;
 	_pointy = point.y;
 
-	//프레임 변경용
+	//Initialize animation
 	_frameFPS = 0;
 	_frameTime = 0;
 	_currentFrameX = _currentFrameY = 0;
 
-	//날라갈때용
+	//Initialize physics
 	_xspeed = _yspeed = _angle = _gravity = 0;
-	//죽을때 뿌릴 돈
+	//Initialize money amount
 	_money = 0;
-	//플레이어 찾았는지 여부
+	//Initialize player detection state
 	_isFindPlayer = false;
 	//_statusEffect[5]
-	//상태이상 클리어
+	//Initialize status effects
 	for (int i = 0; i < 5; i++)
 	{
 		_statusEffect[i].damage = 0;
 		_statusEffect[i].leftTime = 0;
 		_statusEffect[i].type = STATUSEFFECT_NULL;
 	}
-	//스탯 클리어
+	//Initialize stats
 	memset(&_statistics, 0, sizeof(tagStat));
-	//현재 상태 설정(idle)
+	//Set initial state to idle
 	_state = ENEMYSTATE_IDLE;
-	//이미지 그릴떄 쓸 rect, 공격렉트, 마지막에 플레이어가 있던 좌표
+	//Set rect, attackRect, lastPlayerPoint for collision detection
 	_rc = RectMakeCenter(_pointx, _pointy, _image->getFrameWidth(), _image->getFrameHeight());
 	_attackRect = RectMakeCenter(_pointx, _pointy, 1, 1);
 	_lastPlayerPoint = _player->getPoint();
-	//죽었는지 여부 확인 및 투명처리용
+	//Initialize death state
 	_dead = false;
 	_deadAlpha = 0;
 
@@ -66,14 +66,14 @@ void Enemy::release()
 }
 void Enemy::update()
 {
-	//공격용 렉트 정리해주는 함수, 만약 벌레같은 애들은 그냥 공격렉트가 똑같으니 그대로 처리
-	//헤더파일에 있으니까 보고 수정 필요하면 재수정할것
+	//If player is found, move toward the player
+	//Otherwise, check if player is within recognition range
 	attRectClear();
-	//상태이상효과 처리
+	//Apply status effects
 	statusEffect();
-	//낙하 처리
+	//Fall handling
 	falling();
-	//죽었으면 투명도 증가시키기
+	//If dead, fade out
 	if (_state == ENEMYSTATE_DEAD)
 	{
 		_deadAlpha += 5;
@@ -82,21 +82,21 @@ void Enemy::update()
 			_dead = true;
 		}
 	}
-	//죽지 않았을때만 적 확인등을 한다
+	//If player is found and not dead, execute AI
 	if (false)
 	{
-		//각자 움직이는 메커니즘이 다르므로 알아서 처리
-		//일단 적 발견은 계속 true로
+		//If player is farther than min range, move toward them
+		//If within min range, set isFindPlayer to true
 		_isFindPlayer = true;
-		//이동
+		//Move
 		move();
-		//점프
+		//Jump
 		jump();
 
-		//공격
+		//Attack
 		attack();
 
-		//만약 둘 사이의 거리가 한계 인식범위 이상으로 벌어지면 쫓는걸 포기한다
+		//If player goes beyond max range, stop searching
 		if (getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) > _maxCog)
 			_isFindPlayer = false;
 
@@ -104,26 +104,26 @@ void Enemy::update()
 	else
 	{
 		///////////////////////////////////////////////////////////////////////////////////////
-		//프레임워크 수정에 의하여 _PlayerPoint를 _Player->getPoint()로 변경했습니다~~//
+		//Note: _lastPlayerPoint and _player->getPoint() are different!~~//
 		///////////////////////////////////////////////////////////////////////////////////////
 
-		//최초 인식상태의 몬스터와 플레이어의 거리가 기본 인식범위 사이일 때 연산 시작
+		//Re-check line of sight when player is within recognition range
 		if (getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) < _minCog)
 		{
 			if (static_cast<int>(_pointx / TILESIZE) == static_cast<int>(_player->getPoint().x / TILESIZE) &&
 				static_cast<int>(_pointy / TILESIZE) == static_cast<int>(_player->getPoint().y / TILESIZE))
 			{
-				//몬스터와 플레이어가 같은 에어리어에 있다면 벽이든 뭐든 처리
+				//If on the same tile, detect immediately without line of sight check
 				_isFindPlayer = true;
 			}
 			else
 			{
-				//인식범위 너무 길기도 하고 몹마다 달라서 virtual 함수로 빼놨습니다(제일 아래쪽)
+				//If not on the same tile, line of sight check via virtual function (polymorphism)
 				playerCog();
 			}
 		}
 	}
-	//프레임 업데이트와 rect는 거리에 관계없이 처리
+	//Update frame and resize rect for rendering
 	frameUpdate();
 	rectResize();
 }
@@ -132,8 +132,8 @@ void Enemy::render()
 	_image->frameRender(getMemDC(), _rc.left, _rc.top);
 }
 
-//그릴 때	x좌표에 camera.x 만큼
-//			y좌표에 camera.y 만큼 더해주기!!!!
+//Draw function x coordinate is camera.x offset
+//			y coordinate is camera.y offset!!!!
 void Enemy::render(POINT camera)
 {
 	draw(camera);
@@ -141,6 +141,39 @@ void Enemy::render(POINT camera)
 void Enemy::draw(POINT camera)
 {
 
+}
+
+void Enemy::drawDebug(POINT camera)
+{
+	if (!isDebugLayerEnabled(DEBUG_LAYER_HITBOX))
+		return;
+
+	SDL_Renderer* dc = getMemDC();
+	const int cx = (int)_pointx + camera.x;
+	const int cy = (int)_pointy + camera.y;
+	const int minR = (int)_minCog;
+	const int maxR = (int)std::min(_maxCog, (float)(TILESIZE * 12));
+
+	debugDrawRect(dc, _rc, camera, DebugPalette::Enemy);
+	debugDrawRect(dc, _attackRect, camera, DebugPalette::Attack);
+	debugDrawCrosshair(dc, cx, cy, 4, DebugPalette::EnemyCore);
+
+	if (_maxCog <= TILESIZE * 12)
+	{
+		if (minR > 0)
+			debugDrawRect(dc, cx - minR, cy - minR, cx + minR, cy + minR,
+				DebugPalette::DetectLine.r, DebugPalette::DetectLine.g, DebugPalette::DetectLine.b, 180);
+		if (maxR > minR)
+			debugDrawRect(dc, cx - maxR, cy - maxR, cx + maxR, cy + maxR,
+				DebugPalette::DetectLine.r, DebugPalette::DetectLine.g, DebugPalette::DetectLine.b, 120);
+	}
+
+	if (_player && _isFindPlayer)
+	{
+		int px = _player->getPoint().x + camera.x;
+		int py = _player->getPoint().y + camera.y;
+		debugDrawLine(dc, cx, cy, px, py, DebugPalette::DetectLine);
+	}
 }
 void Enemy::move()
 {
@@ -156,7 +189,7 @@ void Enemy::attack()
 }
 void Enemy::addStatusEffect(tagStatusEffect statuseffect)
 {
-	//상태이상 추가!
+	//Add status effect!
 	for (int i = 0; i < 5; i++)
 	{
 		if (_statusEffect[i].type == NULL)
@@ -170,7 +203,7 @@ void Enemy::addStatusEffect(tagStatusEffect statuseffect)
 
 void Enemy::statusEffect()
 {
-	//스테이터스 이상시 효과를 주기위함
+	//Apply status effect over time
 	for (int i = 0; i < 5; i++)
 	{
 		if (_statusEffect[i].type == NULL) continue;
@@ -200,41 +233,41 @@ void Enemy::rectResize()
 
 void Enemy::playerCog()
 {
-	//그냥 적과 플레이어 사이에 선 하나 찍 그어놓고 선이 벽을 지나치는지 체크하는 정도
-	//플레이어가 움직이지 않을때는 속도를 조금이라도 높이고자 바뀌었을때만 체크
+	// Re-check line of sight only when the player has moved
 	if (_lastPlayerPoint.x != _player->getPoint().x && _lastPlayerPoint.y != _player->getPoint().y)
 	{
-		//움직였다면 마지막 위치를 갱신해줍니다
+		// Remember player position for next comparison
 		_lastPlayerPoint = _player->getPoint();
-		//만약 벽이 있었으면 이걸 ++
+		// Number of walls blocking the ray
 		int count = 0;
-		//몬스터와 플레이어 사이의 타일 x, y좌표를 위함
+		// Last sampled tile coordinates along the ray
 		float x = 0;
 		float y = 0;
-		//플레이어와 적 사이의 거리, 각도 체크용
+		// Distance and angle from enemy to player
 		float dist = getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y);
 		float angle = getAngle(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y);
-		//적과 나 사이에 벽이 있는지 판별한다
+		// Step along the ray in tile-sized increments
 		for (int i = 0; i < dist; i += TILESIZE)
 		{
-			//만약 지금 검사할 타일이 이미 검사할 타일과 같다면 다음으로 넘어간다
+			// Convert world position to tile coordinates
 			float ox = (_pointx + i*cosf(angle)) / TILESIZE;
 			float oy = (_pointy + i*-sinf(angle)) / TILESIZE;
 
 			if (ox == x && oy == y) continue;
 
-			//다르다면 x, y를 바꿔주고 그 타일을 검사한다
+			// Advance to the next tile along the ray
 			x = ox;
 			y = oy;
 
-			//해당 타일이 벽이라면 인식을 못했다고 처리해주고 연산 속도를 위해 바로 빠져나옵니다
-			if (static_cast<int>(_map->getMapInfo(y, x).type == MAPTILE_WALL))
+			// Wall blocks line of sight (row = y, col = x)
+			if (_map->getMapInfo((int)y, (int)x).type == MAPTILE_WALL ||
+				_map->getMapInfo((int)y, (int)x).type == MAPTILE_WALL2)
 			{
 				count++;
 				break;
 			}
 		}
-		//만약 벽이 하나라도 검출되었다면 인식 못함으로 처리
+		// Blocked ray: player not visible; clear ray: player spotted
 		if (count >= 1) _isFindPlayer = false;
 		else _isFindPlayer = true;
 	}

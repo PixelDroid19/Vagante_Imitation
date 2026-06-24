@@ -31,6 +31,7 @@ public:
 	void render();
 	void render(POINT camera);
 	void draw(POINT camera);
+	void drawDebug(POINT camera);
 
 	void deadEnemyCheck();
 

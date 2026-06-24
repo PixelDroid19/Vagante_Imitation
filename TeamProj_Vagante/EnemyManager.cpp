@@ -16,7 +16,7 @@ EnemyManager::~EnemyManager()
 HRESULT EnemyManager::init()
 {
 
-	//송충이 추가~
+	//?????? ???~
 	Enemy* temp = new worm;
 	POINT pt = PointMake(TILESIZE * 26, TILESIZE * 10);
 	temp->setMap(_map);
@@ -77,7 +77,7 @@ HRESULT EnemyManager::init()
 	
 
 
-	//박쥐추가~
+	//???????~
 	temp = new bat;
 	 pt = PointMake(TILESIZE * 16, TILESIZE * 6);
 	temp->setMap(_map);
@@ -135,7 +135,7 @@ HRESULT EnemyManager::init()
 	temp->init(pt, 0, 0);
 	_vEnemy.push_back(temp);
 
-	//고블린 추가~
+	//?????? ???~
 	temp = new goblin;
 	pt = PointMake(TILESIZE * 23, TILESIZE * 10);
 	temp->setMap(_map);
@@ -172,7 +172,7 @@ HRESULT EnemyManager::init()
 	temp->init(pt, 50, 50);
 	_vEnemy.push_back(temp);
 
-	//맨이터 추가
+	//?????? ???
 	temp = new manEater;
 	pt = PointMake(TILESIZE * 17, TILESIZE * 5);
 	temp->setMap(_map);
@@ -222,7 +222,7 @@ HRESULT EnemyManager::init()
 	temp->setUiAddressLink(_ui);
 	temp->init(pt, 50, 50);
 	_vEnemy.push_back(temp);
-	//슬라임
+	//??????
 	temp = new slime;
 	pt = PointMake(TILESIZE * 16, TILESIZE * 32);
 	temp->setMap(_map);
@@ -261,7 +261,7 @@ HRESULT EnemyManager::init()
 	
 
 	_boss = new Boss();
-	////상호참조를 위한 address링크
+	////????????? ???? address???
 	_boss->setPlayerAddressLink(_player);
 	_boss->setUiAddressLink(_ui);
 	_boss->setMapAddressLink(_map);
@@ -279,16 +279,16 @@ void EnemyManager::update()
 
 	for (_viEnemy = _vEnemy.begin(); _viEnemy != _vEnemy.end(); ++_viEnemy)
 	{
-		//업데이트
+		//???????
 		(*_viEnemy)->update();
 	}
 
-	//보스 체크
+	//???? ??
 
-	//업데이트
+	//???????
 	_boss->update();
 
-	//enemy가 죽었는지 체크
+	//enemy?? ??????? ??
 	deadEnemyCheck();
 }
 void EnemyManager::render()
@@ -296,8 +296,8 @@ void EnemyManager::render()
 
 }
 
-//그릴 때	x좌표에 camera.x 만큼
-//			y좌표에 camera.y 만큼 더해주기!!!!
+//??? ??	x????? camera.x ???
+//			y????? camera.y ??? ???????!!!!
 void EnemyManager::render(POINT camera)
 {
 	for (_viEnemy = _vEnemy.begin(); _viEnemy != _vEnemy.end(); ++_viEnemy)
@@ -307,7 +307,15 @@ void EnemyManager::render(POINT camera)
 	_boss->render(camera);
 
 	draw(camera);
+}
+void EnemyManager::drawDebug(POINT camera)
+{
+	if (!isDebugDrawEnabled())
+		return;
 
+	for (_viEnemy = _vEnemy.begin(); _viEnemy != _vEnemy.end(); ++_viEnemy)
+		(*_viEnemy)->drawDebug(camera);
+	_boss->drawDebug(camera);
 }
 void EnemyManager::draw(POINT camera)
 {
