@@ -19,56 +19,56 @@ class Enemy;
 #define LADDERDOWNSPEED -3
 
 /*
-!vaganteStructEnum.h 선언했으니 참조만 할 것!
+!You can check the detailed values in vaganteStructEnum.h!
 enum PLAYERSTATE {
-	PLAYERSTATE_ILDE,				//일반상태
-	PLAYERSTATE_LOOKING_UP,			//위를 올려다보는 상태
-	PLAYERSTATE_LOOKING_DOWN,		//아래를 내려다보는 상태
-	PLAYERSTATE_MOVING,				//이동
-	PLAYERSTATE_JUMPING,			//점프
-	PLAYERSTATE_FALLING,			//추락
-	PLAYERSTATE_ATTACKING_1,		//공격1
-	PLAYERSTATE_ATTACKING_2,		//공격2
-	PLAYERSTATE_ATTACKING_3,		//공격3
-	PLAYERSTATE_HIT,				//공격받음
-	PLAYERSTATE_HOLDING_WALL,		//벽 매달림
-	PLAYERSTATE_HOLDING_LADDER,		//사다리 매달림
-	PLAYERSTATE_CHEKINGINVENTORY	//인벤토리 확인중
+	PLAYERSTATE_ILDE,				//Normal state
+	PLAYERSTATE_LOOKING_UP,			//Looking up with up arrow
+	PLAYERSTATE_LOOKING_DOWN,		//Looking down with down arrow
+	PLAYERSTATE_MOVING,				//Moving
+	PLAYERSTATE_JUMPING,			//Jumping
+	PLAYERSTATE_FALLING,			//Falling
+	PLAYERSTATE_ATTACKING_1,		//Attack 1
+	PLAYERSTATE_ATTACKING_2,		//Attack 2
+	PLAYERSTATE_ATTACKING_3,		//Attack 3
+	PLAYERSTATE_HIT,				//Hit state
+	PLAYERSTATE_HOLDING_WALL,		//Holding wall
+	PLAYERSTATE_HOLDING_LADDER,		//Holding ladder
+	PLAYERSTATE_CHEKINGINVENTORY	//Checking inventory
 };
 struct tagStat {
-	int hp;		//체력
-	int str;	//힘
-	int dex;	//민첩
-	int vit;	//활력
-	int inl;	//지능
-	int lck;	//운
-	int def;	//방어력
-	int fir;	//불저항
-	int ice;	//얼음저항
-	int lgt;	//빛저항
-	int psn;	//독저항
-	int mel;	//근접공격데미지
-	int rng;	//활공격데미지
-	int crit;	//크리티컬확률
-	int aspd;	//공속
-	int spd;	//이속
+	int hp;		//Health
+	int str;	//Strength
+	int dex;	//Dexterity
+	int vit;	//Vitality
+	int inl;	//Intelligence
+	int lck;	//Luck
+	int def;	//Defense
+	int fir;	//Fire resistance
+	int ice;	//Ice resistance
+	int lgt;	//Lightning resistance
+	int psn;	//Poison resistance
+	int mel;	//Melee attack damage
+	int rng;	//Ranged attack damage
+	int crit;	//Critical hit rate
+	int aspd;	//Attack speed
+	int spd;	//Movement speed
 };
 
 struct tagPlayerInfo {
 	image* image;
 	PLAYERSTATE state;
-	tagStatusEffect statusEffect[5];	//상태이상
-	tagStat stat;						//스탯
-	float pointx, pointy;				//현재좌표
-	float xspeed;						//현재 좌우 이동 속도
-	float yspeed;						//현재 상하 이동 속도
-	bool lookingRight;					//보고있는 방향
-	bool lookingLeft;					//보고있는 방향
-	float jumppower;					//점프력
-	RECT rc;							//렉트~!
-	int money;							//돈
-	float gravity;						//중력
-	int currentFrameX, curretFrameY;	//현재 프레임
+	tagStatusEffect statusEffect[5];	//Status effects
+	tagStat stat;						//Stats
+	float pointx, pointy;				//Position coordinates
+	float xspeed;						//X-axis horizontal speed
+	float yspeed;						//Y-axis vertical speed
+	bool lookingRight;					//Looking right
+	bool lookingLeft;					//Looking left
+	float jumppower;					//Jump power
+	RECT rc;							//Rect
+	int money;							//Money
+	float gravity;						//Gravity
+	int currentFrameX, curretFrameY;	//Current frame
 };
 */
 class Player : public gameNode
@@ -85,15 +85,15 @@ private:
 	EnemyManager* _em;
 	Map* _map;
 	UI* _ui;
-	bool _canCtrl;		//조작 가능 여부 판단
+	bool _canCtrl;		//Determines whether input can be received
 	
 
-	mapInfo upL, upM, upR, midL, midM, midR, botL, botM, botR;// 위치 정보
-	int _curTileX, _curTileY; // 현재 타일 위치
-	int _prevTileX, _prevTileY; // 이전 타일 위치
+	mapInfo upL, upM, upR, midL, midM, midR, botL, botM, botR;// Position info
+	int _curTileX, _curTileY; // Current tile position
+	int _prevTileX, _prevTileY; // Previous tile position
 
 	tagItem _equipWeapon;
-	MYRECT _equipWeaponRect;  //무기를 담을 렉트
+	MYRECT _equipWeaponRect;  //Rect for drawing weapon
 	float _attackDelay;
 	
 	vEnemyRange _vEnemyRange;	
@@ -125,45 +125,46 @@ public:
 	void render();
 	void render(POINT camera);
 	void draw(POINT camera);
+	void drawDebug(POINT camera);
 
-	//초기 설정
+	//Initial settings
 	void firstSettingStat();
 
 
-	void move();			// 이동관련함수
-	void keyintput();		// 키 입력 함수
-	void setmaptileInfo();	// 타일값 얻어오기
-	void setStateImg(void); // 상태에 따라 이미지 변경	
+	void move();			// Movement function
+	void keyintput();		// Key input function
+	void setmaptileInfo();	// Get tile info
+	void setStateImg(void); // Set image according to state	
 	void frameUpdate();
 
-	void jump();			// 점프
-	void attack();			// 공격
-	void attackjump();		// 점프중 공격
-	void attackingNow();	// 공격중
-	void holdLadder();		// 사다리 매달리기
-	void canDown();			// 바닥 내려가기
+	void jump();			// Jump
+	void attack();			// Attack
+	void attackjump();		// Attack while jumping
+	void attackingNow();	// Currently attacking
+	void holdLadder();		// Hold ladder
+	void canDown();			// Check if can go down from ground
 
 	void mapcollision();
 	void attackCollision();
 
-	void checkStatusEffect(); //상태이상 확인하기
-	void checkHitEnemy(); //공격 확인하기
-	void checkInvincible(); //무적 확인하기
-	void checkItemBox(); //박스 위치 확인하기
-	void checkDropItem(); //드랍 아이템 확인
+	void checkStatusEffect(); //Check status effects
+	void checkHitEnemy(); //Check enemy hit
+	void checkInvincible(); //Check invincibility
+	void checkItemBox(); //Check item box position
+	void checkDropItem(); //Check dropped items
 
-	//공격 받았을 시 (데미지만)
+	//When hit (knockback)
 	void getDamaged(int damage);
-	//공격 받았을 시 (데미지&넉백)
+	//When hit (knockback angle knockback)
 	void getDamaged(int damage, float angle, float knockbackpower);
-	//상태이상효과 추가
+	//Add status effect
 	void addStatusEffect(tagStatusEffect statuseffect);
 
 	void enemyCollision(void);
 
 
 
-	//설정&접근자
+	//Getter&Setter
 	inline int getHP() { return _player.stat.hp; }
 	inline void setHP(int hp) { _player.stat.hp = hp; }
 	inline POINT getPoint() { return PointMake(int(_player.pointx), int(_player.pointy)); }
@@ -192,4 +193,3 @@ public:
 	Player();
 	~Player();
 };
-

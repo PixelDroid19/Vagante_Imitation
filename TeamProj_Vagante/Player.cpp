@@ -3,6 +3,7 @@
 #include "EnemyManager.h"
 #include "Map.h"
 #include "UI.h"
+#include "Enemy.h"
 
 // Created by YOOJOOWON 17.11
 
@@ -20,7 +21,7 @@ HRESULT Player::init(POINT point)
 	_invincibleTime = 0;
 	_test = 0;
 
-	//이미지 추가 (나중에 main으로 옮길 예정)
+	// Image addition (to be newly added from main later)
 
 	IMAGEMANAGER->addFrameImage("player_idle", "Img/player/player_idle.bmp", 96, 96, 2, 2, true, RGB(255, 0, 255));
 	IMAGEMANAGER->addFrameImage("player_jumping", "Img/player/player_jumping.bmp", 192, 96, 4, 2, true, RGB(255, 0, 255));
@@ -34,20 +35,20 @@ HRESULT Player::init(POINT point)
 	IMAGEMANAGER->addFrameImage("player_down", "Img/player/player_down.bmp", 288, 96, 6, 2, true, RGB(255, 0, 255));
 
 
-	//애니메이션과 스테이터스 초기 설정
+	// Initial animation and status settings
 	firstSettingStat();
-	_player.image = IMAGEMANAGER->findImage("player_idle");
+	_player.img = IMAGEMANAGER->findImage("player_idle");
 	_animSpeed = 5;
 	_animCount = 0;
 	_animDelay = 0;
 
-	//플레이어 위치 및 RECT
+	// Player position and RECT
 	_player.pointx = point.x;
 	_player.pointy = point.y;
 	_player.rc = RectMakeCenter(_player.pointx, _player.pointy, 24, 24);
 
 
-	//맵 정보 설정
+	// Save tile info
 	_curTileX = _prevTileX = int(_player.pointx) / TILESIZE;
 	_curTileY = _prevTileY = int(_player.pointy) / TILESIZE;
 
@@ -75,7 +76,7 @@ void Player::update()
 	_player.rc = RectMakeCenter(_player.pointx, _player.pointy, 24, 24);
 
 
-	//공격 임시
+	// Collision temp
 
 	
 	checkInvincible();
@@ -84,21 +85,21 @@ void Player::update()
 	checkItemBox();
 
 
-	//무적 체크
+	// Check collision
 	
 	
 	mapcollision();	
 	//enemyCollision
 
 
-	//조작 가능하면 키 입력 받기 (ui에게 조작이 넘어갈 경우 _canCtrl값 false)
+	// Receive input if not in collision (when going to inventory in UI, _canCtrl is false)
 	if (_canCtrl) keyintput();
-	//움직임
+	// Movement processing
 	move();
-	//타일값 읽기
+	// Tile collision
 	setmaptileInfo();
 
-	//프레임 업데이트
+	// Collision update
 	frameUpdate();
 	}
 
@@ -109,8 +110,8 @@ void Player::render()
 }
 
 
-//그릴 때	x좌표에 camera.x 만큼
-//			y좌표에 camera.y 만큼 더해주기!!!!
+// Draw function   x coordinate is camera.x offset
+//			y coordinate is camera.y offset!!!!
 void Player::render(POINT camera)
 {
 	draw(camera);
@@ -123,15 +124,15 @@ void Player::draw(POINT camera)
 
 	if (_invincible && _player.state != PLAYERSTATE_DEAD)
 	{
-		_player.image->alphaFrameRender(getMemDC(), _player.rc.left - 12 + camera.x, _player.rc.top - 24 + camera.y, _player.currentFrameX, _player.curretFrameY, int(TIMEMANAGER->getWorldTime() * 100)%2 * 200);
+		_player.img->alphaFrameRender(getMemDC(), _player.rc.left - 12 + camera.x, _player.rc.top - 24 + camera.y, _player.currentFrameX, _player.curretFrameY, int(TIMEMANAGER->getWorldTime() * 100)%2 * 200);
 	}
 	else
 	{
-		_player.image->frameRender(getMemDC(), _player.rc.left - 12 + camera.x, _player.rc.top - 24 + camera.y, _player.currentFrameX, _player.curretFrameY);
+		_player.img->frameRender(getMemDC(), _player.rc.left - 12 + camera.x, _player.rc.top - 24 + camera.y, _player.currentFrameX, _player.curretFrameY);
 	}
 	
 
-	//_player.image->frameRender(getMemDC(), WINSIZEX / 2, WINSIZEY / 2, _player.image->getFrameX(), _player.image->getFrameY());
+	//_player.img->frameRender(getMemDC(), WINSIZEX / 2, WINSIZEY / 2, _player.img->getFrameX(), _player.img->getFrameY());
 
 	if (_player.state == PLAYERSTATE_ATTACKING || _player.state == PLAYERSTATE_ATTACKING_JUMP)
 	{
@@ -174,44 +175,44 @@ void Player::setStateImg() {
 	switch (_player.state)
 	{
 	case PLAYERSTATE_IDLE:
-		_player.image = IMAGEMANAGER->findImage("player_idle");
+		_player.img = IMAGEMANAGER->findImage("player_idle");
 		break;
 	case PLAYERSTATE_LOOKING_DOWN:
-		_player.image = IMAGEMANAGER->findImage("player_lookingdown");
+		_player.img = IMAGEMANAGER->findImage("player_lookingdown");
 		break;
 	case PLAYERSTATE_LOOKING_DOWN_MOVING:
-		_player.image = IMAGEMANAGER->findImage("player_lookingdownmoving");
+		_player.img = IMAGEMANAGER->findImage("player_lookingdownmoving");
 		break;
 	case PLAYERSTATE_MOVING:
-		_player.image = IMAGEMANAGER->findImage("player_moving");
+		_player.img = IMAGEMANAGER->findImage("player_moving");
 		break;
 	case PLAYERSTATE_JUMPING:
 	case PLAYERSTATE_FALLING:
-		_player.image = IMAGEMANAGER->findImage("player_jumping");
+		_player.img = IMAGEMANAGER->findImage("player_jumping");
 		break;
 	case PLAYERSTATE_ATTACKING:
 	case PLAYERSTATE_ATTACKING_JUMP:
 	case PLAYERSTATE_ATTACKING_3:
-		_player.image = IMAGEMANAGER->findImage("player_attacking");
+		_player.img = IMAGEMANAGER->findImage("player_attacking");
 		_animDelay = 0;
 		break;
 	case PLAYERSTATE_HIT:
-		_player.image = IMAGEMANAGER->findImage("player_idle");
+		_player.img = IMAGEMANAGER->findImage("player_idle");
 		break;
 	case PLAYERSTATE_HOLDING_WALL:
-		_player.image = IMAGEMANAGER->findImage("player_holdingwall");
+		_player.img = IMAGEMANAGER->findImage("player_holdingwall");
 		break;
 	case PLAYERSTATE_HOLDING_LADDERUP:
-		_player.image = IMAGEMANAGER->findImage("player_ladderup");
+		_player.img = IMAGEMANAGER->findImage("player_ladderup");
 		break;
 	case PLAYERSTATE_HOLDING_LADDERDOWN:
-		_player.image = IMAGEMANAGER->findImage("player_ladderdown");
+		_player.img = IMAGEMANAGER->findImage("player_ladderdown");
 		break;
 	case PLAYERSTATE_CHEKINGINVENTORY:
-		_player.image = IMAGEMANAGER->findImage("player_idle");
+		_player.img = IMAGEMANAGER->findImage("player_idle");
 		break;
 	case PLAYERSTATE_DEAD:
-		_player.image = IMAGEMANAGER->findImage("player_down");
+		_player.img = IMAGEMANAGER->findImage("player_down");
 		break;
 	}
 }
@@ -238,7 +239,7 @@ void Player::frameUpdate() {
 			_animSpeed = 3;
 			_player.currentFrameX++;
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX())  _player.currentFrameX = 0;
+			if (_player.currentFrameX >= _player.img->getMaxFrameX())  _player.currentFrameX = 0;
 
 			break;
 
@@ -249,7 +250,7 @@ void Player::frameUpdate() {
 			_animSpeed = 3;
 			_player.currentFrameX++;
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX()) _player.currentFrameX = 0;
+			if (_player.currentFrameX >= _player.img->getMaxFrameX()) _player.currentFrameX = 0;
 			break;
 
 		case PLAYERSTATE_JUMPING:
@@ -261,7 +262,7 @@ void Player::frameUpdate() {
 		case PLAYERSTATE_FALLING:
 			_animSpeed = 5;
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX()) _player.currentFrameX = _player.image->getMaxFrameX();
+			if (_player.currentFrameX >= _player.img->getMaxFrameX()) _player.currentFrameX = _player.img->getMaxFrameX();
 			else _player.currentFrameX++;
 			break;
 
@@ -289,7 +290,7 @@ void Player::frameUpdate() {
 			_animSpeed = 5;
 
 			if (_player.yspeed > 0) {
-				if (_player.currentFrameX >= _player.image->getMaxFrameX()) _player.currentFrameX = 0;
+				if (_player.currentFrameX >= _player.img->getMaxFrameX()) _player.currentFrameX = 0;
 				else _player.currentFrameX++;
 			}
 			break;
@@ -300,7 +301,7 @@ void Player::frameUpdate() {
 		case PLAYERSTATE_DEAD:
 			_animSpeed = 3;
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX()) _player.currentFrameX = _player.image->getMaxFrameX();
+			if (_player.currentFrameX >= _player.img->getMaxFrameX()) _player.currentFrameX = _player.img->getMaxFrameX();
 			else _player.currentFrameX++;
 			break;
 
@@ -310,33 +311,33 @@ void Player::frameUpdate() {
 	}
 
 
-//	_player.image->setX(_player.rc.left);
-//	_player.image->setY(_player.rc.top);
+//	_player.img->setX(_player.rc.left);
+//	_player.img->setY(_player.rc.top);
 }
 
 void Player::move()
 {
 
-	//state 별로 계산해야할 것
+	// State must be processed separately
 	switch (_player.state) {
 	case PLAYERSTATE_IDLE: 
 
 	break;
 
 	case PLAYERSTATE_JUMPING:
-		// 중력
+		// Gravity
 		_player.yspeed -= _player.gravity;
-		// 중력 (최대 속도 제한 있음)
+		// Gravity (clamp to max fall speed)
 		if (_player.yspeed < -FALLPOWERMAX)
 			_player.yspeed = -FALLPOWERMAX;
 
-		// 좌우 키보드 뗄 시 수직 강하로 바뀜 (포물선처럼 보이게)
+		// Gradually reduce horizontal speed when airborne (sliding friction)
 		if (_player.xspeed > 0)
 			_player.xspeed -= 0.2;
 		else if (_player.xspeed < 0)
 			_player.xspeed += 0.2;
 
-		//FALLING 상태로 변경
+		// Transition to FALLING state
 		if (_player.yspeed < 0) {
 			_player.state = PLAYERSTATE_FALLING;
 			setStateImg();
@@ -345,13 +346,13 @@ void Player::move()
 
 	case PLAYERSTATE_FALLING:
 	case PLAYERSTATE_ATTACKING_JUMP:
-		// 중력
+		// Gravity
 		_player.yspeed -= _player.gravity;
-		// 중력 (최대 속도 제한 있음)
+		// Gravity (clamp to max fall speed)
 		if (_player.yspeed < -FALLPOWERMAX)
 			_player.yspeed = -FALLPOWERMAX;
 
-		// 좌우 키보드 뗄 시 수직 강하로 바뀜 (포물선처럼 보이게)
+		// Gradually reduce horizontal speed when airborne (sliding friction)
 		if (_player.xspeed > 0)
 			_player.xspeed -= 0.2;
 		else if (_player.xspeed < 0)
@@ -366,9 +367,9 @@ void Player::move()
 			_player.xspeed += 0.2;
 		if (_player.yspeed != 0)
 		{
-			// 중력
+			// Gravity
 			_player.yspeed -= _player.gravity;
-			// 중력 (최대 속도 제한 있음)
+			// Gravity (clamp to max fall speed)
 			if (_player.yspeed < -FALLPOWERMAX)
 				_player.yspeed = -FALLPOWERMAX;
 		}
@@ -387,16 +388,16 @@ void Player::move()
 	break;
 
 	case PLAYERSTATE_DEAD:
-		// 중력
+		// Gravity
 		_player.yspeed -= _player.gravity;
-		// 중력 (최대 속도 제한 있음)
+		// Gravity (clamp to max fall speed)
 		if (_player.yspeed < -FALLPOWERMAX)
 			_player.yspeed = -FALLPOWERMAX;
 	break;
 		
 	}
 
-	//이동 (spd의 퍼센트만큼 이속 점프속이 빨라진다)
+	// Movement (multiply speed by spd stat factor to determine final speed)
 	_player.pointx += (_player.xspeed  * (_player.stat.spd * 0.01 + 1));
 	_player.pointy -= (_player.yspeed  * (_player.stat.spd * 0.01 + 1));
 
@@ -426,21 +427,21 @@ void Player::keyintput()
 	*/
 	//~test
 
-	//이동관련
+	// Movement possible?
 	bool canMove = true;
-	//스턴중인지 체크
+	// Check stun status
 	for (int i = 0; i < 5; i++)
 	{
 		if (_player.statusEffect[i].type == STATUSEFFECT_STUN) canMove = false;
 	}
-	//아니라면 행동
+	// If not stunned, take action
 
 	if (_player.state == PLAYERSTATE_DEAD)
 		canMove = false;
 
 	if (canMove)
 	{
-		//방향 설정
+		// Direction setting
 		if (_player.state != PLAYERSTATE_HOLDING_WALL &&
 			_player.state != PLAYERSTATE_ATTACKING &&
 			_player.state != PLAYERSTATE_ATTACKING_JUMP) {
@@ -455,14 +456,14 @@ void Player::keyintput()
 
 			_player.xspeed = 0;
 
-			//올려다보는 모션
+			// Looking up at ladder
 			if (KEYMANAGER->isStayKeyDown(VK_UP))
 				_player.currentFrameX = 1;
 			if (KEYMANAGER->isOnceKeyUp(VK_UP))
 				_player.currentFrameX = 0;
 
 
-			//이동
+			// Movement
 			if (KEYMANAGER->isStayKeyDown(VK_RIGHT)) {
 				_player.xspeed = RUNPOWERSTART;
 				_player.state = PLAYERSTATE_MOVING;
@@ -492,7 +493,7 @@ void Player::keyintput()
 
 		case PLAYERSTATE_MOVING:
 
-			// 이동 중단
+			// Stop moving
 			if (KEYMANAGER->isOnceKeyUp(VK_LEFT) && !_player.lookingRight) {
 				_player.xspeed = 0;
 				_player.state = PLAYERSTATE_IDLE;
@@ -505,14 +506,14 @@ void Player::keyintput()
 
 			}
 
-			//아래 보기
+			// Look down
 
 			if (KEYMANAGER->isStayKeyDown(VK_DOWN)) {
 				_player.state = PLAYERSTATE_LOOKING_DOWN_MOVING;
 				setStateImg();
 			}
 
-			// 가속
+			// Acceleration
 			if (KEYMANAGER->isStayKeyDown(VK_LEFT) && !_player.lookingRight) {
 				_player.xspeed -= 1;
 			}
@@ -556,7 +557,7 @@ void Player::keyintput()
 			break;
 
 		case PLAYERSTATE_LOOKING_DOWN_MOVING:
-			// 이동 중단
+			// Stop moving
 			if (KEYMANAGER->isOnceKeyUp(VK_LEFT) && !_player.lookingRight) {
 				_player.xspeed = 0;
 				_player.state = PLAYERSTATE_LOOKING_DOWN;
@@ -568,13 +569,13 @@ void Player::keyintput()
 				setStateImg();
 			}
 
-			//일어서기
+			// Stand up
 			if (KEYMANAGER->isOnceKeyUp(VK_DOWN)) {
 				_player.state = PLAYERSTATE_MOVING;
 				setStateImg();
 			}
 
-			// 가속
+			// Acceleration
 			if (KEYMANAGER->isStayKeyDown(VK_LEFT) && !_player.lookingRight) {
 				_player.xspeed -= 1 * 0.5;
 			}
@@ -597,12 +598,12 @@ void Player::keyintput()
 
 		case PLAYERSTATE_JUMPING:
 
-			// 꾹 누르면 더 높이 올라감
-			if (KEYMANAGER->isStayKeyDown('Z') && _player.yspeed > 3) {
+			// Climb higher while holding Z button
+			if (KEYMANAGER->isStayKeyDown(VK_Z) && _player.yspeed > 3) {
 				_player.yspeed += 0.3;
 			}
 
-			// 점프 중 좌우 이동
+			// Left/right movement in air
 			if (KEYMANAGER->isStayKeyDown(VK_RIGHT)) {
 				_player.xspeed += 0.5;
 				if (_player.xspeed > RUNPOWERMAX)
@@ -623,7 +624,7 @@ void Player::keyintput()
 		case PLAYERSTATE_FALLING:
 
 
-			// 점프 중 좌우 이동
+			// Left/right movement in air
 			if (KEYMANAGER->isStayKeyDown(VK_RIGHT)) {
 				_player.xspeed += 0.5;
 				if (_player.xspeed > RUNPOWERMAX)
@@ -646,10 +647,10 @@ void Player::keyintput()
 		case PLAYERSTATE_ATTACKING:
 			attackingNow();
 
-			//공격 중에 점프 가능 (함수 안에서 예외처리함)
+			// Jump is allowed during attack (handled inside function)
 			jump();
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX()) {
+			if (_player.currentFrameX >= _player.img->getMaxFrameX()) {
 				_player.state = PLAYERSTATE_IDLE;
 				setStateImg();
 			}
@@ -658,7 +659,7 @@ void Player::keyintput()
 		case PLAYERSTATE_ATTACKING_JUMP:
 			attackingNow();
 
-			// 점프 중 좌우 이동
+			// Left/right movement in air
 			if (KEYMANAGER->isStayKeyDown(VK_RIGHT)) {
 				_player.xspeed += 0.5;
 				if (_player.xspeed > RUNPOWERMAX)
@@ -672,12 +673,12 @@ void Player::keyintput()
 			}
 
 
-			// 꾹 누르면 더 높이 올라감
-			if (KEYMANAGER->isStayKeyDown('Z') && _player.yspeed > 0) {
+			// Climb higher while holding Z button
+			if (KEYMANAGER->isStayKeyDown(VK_Z) && _player.yspeed > 0) {
 				_player.yspeed += 0.3;
 			}
 
-			if (_player.currentFrameX >= _player.image->getMaxFrameX()) {
+			if (_player.currentFrameX >= _player.img->getMaxFrameX()) {
 				_player.state = PLAYERSTATE_FALLING;
 				setStateImg();
 			}
@@ -691,9 +692,9 @@ void Player::keyintput()
 			break;
 		case PLAYERSTATE_HOLDING_WALL:
 
-			//홀드 중에 점프
-			//벽에 다시 붙지 않게 벽 반대방향으로 약간 이동한 뒤 점프파워를 가한다
-			if (KEYMANAGER->isOnceKeyDown('Z')) {
+			// Jump while holding wall
+			// Jump without climbing again, move slightly in opposite direction, then perform wall jump
+			if (KEYMANAGER->isOnceKeyDown(VK_Z)) {
 				_player.yspeed = JUMPPOWERSTART * 0.8;
 				if (_player.lookingRight) {
 					_player.pointx -= 5;
@@ -713,8 +714,8 @@ void Player::keyintput()
 
 
 			/*
-			//홀드 중에 벽 반대방향으로 이동
-			//벽 반대방향으로 떨어진다
+			// Move in opposite direction while holding wall
+			// If looking right, pressing left reverses direction
 			if (_player.lookingRight)
 			{
 				if (KEYMANAGER->isOnceKeyDown(VK_LEFT)) {
@@ -738,8 +739,8 @@ void Player::keyintput()
 				}
 			}
 
-			//홀드 중에 벽 아래방향으로 이동
-			//벽에 다시 붙지 않게 벽 반대방향으로 약간 이동한 뒤 그대로 falling
+			// Move downward while holding wall
+			// Without climbing again, move slightly in opposite direction then fall
 			if (KEYMANAGER->isOnceKeyDown(VK_DOWN)) {
 				_player.yspeed = -5;
 				if (_player.lookingRight) {
@@ -834,19 +835,19 @@ void Player::keyintput()
 			_player.lookingRight = true;
 			_player.pointx += _player.stat.spd;
 		}
-		if (KEYMANAGER->isOnceKeyDown('Z'))
+		if (KEYMANAGER->isOnceKeyDown(VK_Z))
 		{
 			jump();
 		}
-		if (KEYMANAGER->isOnceKeyDown('X'))
+		if (KEYMANAGER->isOnceKeyDown(VK_X))
 		{
 			attack();
 		}
-		if (KEYMANAGER->isOnceKeyDown('C'))
+		if (KEYMANAGER->isOnceKeyDown(VK_C))
 		{
 
 		}
-		if (KEYMANAGER->isOnceKeyDown('V'))
+		if (KEYMANAGER->isOnceKeyDown(VK_V))
 		{
 
 		}
@@ -856,7 +857,7 @@ void Player::keyintput()
 }
 void Player::jump()
 {
-	if (KEYMANAGER->isOnceKeyDown('Z')) {
+	if (KEYMANAGER->isOnceKeyDown(VK_Z)) {
 		_player.yspeed = JUMPPOWERSTART;
 		_player.gravity = 0.4;
 
@@ -874,10 +875,10 @@ void Player::jump()
 }
 void Player::attack()
 {
-	if (KEYMANAGER->isOnceKeyDown('X')) {
+	if (KEYMANAGER->isOnceKeyDown(VK_X)) {
 		float _offsetX, _offsetY;
 
-		//수치는 임시 나중에 이미지 사이즈로 변경
+		// Temporary offset (will be replaced with image size later)
 		if (_equipWeapon.name == NAME_HAND)
 		{
 			_offsetY = 5;
@@ -901,10 +902,10 @@ void Player::attack()
 
 void Player::attackjump()
 {
-	if (KEYMANAGER->isOnceKeyDown('X')) {
+	if (KEYMANAGER->isOnceKeyDown(VK_X)) {
 		float _offsetX, _offsetY;
 
-		//수치는 임시
+		// Temporary offset
 		if (_equipWeapon.name == NAME_HAND)
 		{
 			_offsetY = 5;
@@ -959,7 +960,7 @@ void Player::holdLadder()
 void Player::canDown()
 {
 	if ((botM.type == MAPTILE_GROUND_CAN_GO_DOWN_1)
-		&& KEYMANAGER->isStayKeyDown(VK_DOWN) && KEYMANAGER->isStayKeyDown('Z')) {
+		&& KEYMANAGER->isStayKeyDown(VK_DOWN) && KEYMANAGER->isStayKeyDown(VK_Z)) {
 		_player.state = PLAYERSTATE_FALLING;
 		_player.yspeed = 0;
 		_player.pointy = botM.rc.top + (_player.rc.bottom - _player.rc.top) * 0.25;
@@ -969,9 +970,93 @@ void Player::canDown()
 
 }
 
+void Player::drawDebug(POINT camera)
+{
+	if (!isDebugDrawEnabled())
+		return;
+
+	SDL_Renderer* dc = getMemDC();
+	const float px = _player.pointx;
+	const float py = _player.pointy;
+	const int screenX = (int)px + camera.x;
+	const int screenY = (int)py + camera.y;
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_PLAYER_9))
+	{
+		const mapInfo tiles[9] = { upL, upM, upR, midL, midM, midR, botL, botM, botR };
+		for (int i = 0; i < 9; i++)
+		{
+			debugDrawFilledRect(dc, tiles[i].rc, camera, DebugPalette::PlayerFill);
+			debugDrawRect(dc, tiles[i].rc, camera, DebugPalette::Player);
+		}
+	}
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_RAYS) && _map)
+	{
+		const int rayCount = 28;
+		const float maxDist = 420.f;
+		for (int i = 0; i < rayCount; i++)
+		{
+			float angle = (PI2 * i) / rayCount;
+			float endX = px;
+			float endY = py;
+			for (float dist = (float)TILESIZE; dist < maxDist; dist += TILESIZE * 0.5f)
+			{
+				float testX = px + cosf(angle) * dist;
+				float testY = py - sinf(angle) * dist;
+				int ty = (int)testY / TILESIZE;
+				int tx = (int)testX / TILESIZE;
+				int tileType = _map->getMapInfo(ty, tx).type;
+				if (tileType == MAPTILE_WALL || tileType == MAPTILE_WALL2)
+					break;
+				endX = testX;
+				endY = testY;
+			}
+			debugDrawLine(dc, screenX, screenY,
+				(int)endX + camera.x, (int)endY + camera.y, DebugPalette::Ray);
+		}
+
+		if (_em)
+		{
+			vector<Enemy*> enemies = _em->getEnemyVector();
+			for (size_t i = 0; i < enemies.size(); i++)
+			{
+				POINT target = enemies[i]->getPoint();
+				float dist = getDistance(px, py, (float)target.x, (float)target.y);
+				float angle = getAngle(px, py, (float)target.x, (float)target.y);
+				float endX = px;
+				float endY = py;
+				for (float step = (float)TILESIZE; step < dist; step += TILESIZE * 0.5f)
+				{
+					float testX = px + cosf(angle) * step;
+					float testY = py - sinf(angle) * step;
+					int ty = (int)testY / TILESIZE;
+					int tx = (int)testX / TILESIZE;
+					int tileType = _map->getMapInfo(ty, tx).type;
+					if (tileType == MAPTILE_WALL || tileType == MAPTILE_WALL2)
+						break;
+					endX = testX;
+					endY = testY;
+				}
+				debugDrawLine(dc, screenX, screenY,
+					(int)endX + camera.x, (int)endY + camera.y, DebugPalette::RayTarget);
+			}
+		}
+	}
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_HITBOX))
+	{
+		debugDrawRect(dc, _player.rc, camera, DebugPalette::Player);
+		debugDrawCrosshair(dc, screenX, screenY, 5, DebugPalette::Player);
+
+		if (_player.state == PLAYERSTATE_ATTACKING || _player.state == PLAYERSTATE_ATTACKING_JUMP)
+			debugDrawRect(dc, _equipWeaponRect, camera, DebugPalette::Weapon);
+	}
+}
+
 void Player::addStatusEffect(tagStatusEffect statuseffect)
 {
-	//상태이상 추가!
+	// Add status effect!
 	for (int i = 0; i < 5; i++)
 	{
 		if (_player.statusEffect[i].type == statuseffect.type)
@@ -989,20 +1074,20 @@ void Player::addStatusEffect(tagStatusEffect statuseffect)
 }
 void Player::setmaptileInfo()
 {
-	/*타일정보
+	/* Tile type
 	type
 
 	MAPTILE_NULL,
 	MAPTILE_WALL,
 	MAPTILE_WALL2,
-	MAPTILE_LADDER, // 사다리
-	MAPTILE_GROUND_CAN_GO_DOWN_1, // 발판
-	MAPTILE_GROUND_CAN_GO_DOWN_2, // 발판
+	MAPTILE_LADDER, // Ladder
+	MAPTILE_GROUND_CAN_GO_DOWN_1, // Ground
+	MAPTILE_GROUND_CAN_GO_DOWN_2, // Ground
 	MAPTILE_TRAP_SPIKE,
 	MAPTILE_TRAP_ARROW,
 	MAPTILE_TRAP_ROCK
 	*/
-	//캐릭터 기준으로 9개의 타일 정보 받아오기
+	// Get info of 9 tiles around the character
 	_curTileX = int(_player.pointx) / TILESIZE;
 	_curTileY = int(_player.pointy) / TILESIZE;
 
@@ -1022,19 +1107,19 @@ void Player::setmaptileInfo()
 
 	}
 
-	//타일 활용 예시
+	// Tile activation processing
 
-	//플레이어 아래 타일 체크
+	// Check tile below player
 
 	//midM
-	//1. (속도 문제 등으로) 벽에 끼일 경우 쫓아내야 한다
+	//1. (If speed is downward) push out from wall when inside
 
 	switch (midM.type) {
 
-		//벽일 경우, 별 조건 없이 쫓아내도 된다
+		// Wall type, pushes player outside
 	case MAPTILE_WALL: case MAPTILE_WALL2:
 
-		//falling이라면 아래로 부딪힌 상황일테니 위로 보내고 idle로 만든다
+		// If falling, when feet land on the floor, transition to idle state
 		if (_player.state == PLAYERSTATE_FALLING) {
 			_player.pointy = midM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5);
 			_player.currentFrameX = 8;
@@ -1044,7 +1129,7 @@ void Player::setmaptileInfo()
 			setStateImg();
 		}
 
-		//ATTAKING_JUMP라면 위로 보낸 뒤 계속 공격한다
+		// If ATTACKING_JUMP, land while keeping attack state
 		if (_player.state == PLAYERSTATE_ATTACKING_JUMP) {
 			_player.pointy = midM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5);
 			_player.xspeed = 0;
@@ -1052,7 +1137,7 @@ void Player::setmaptileInfo()
 			_player.state = PLAYERSTATE_ATTACKING;
 		}
 
-		//jump라면 위로 부딪힌 상황일테니 밑으로 튕겨낸다
+		// If jumping, pop out downward when head hits ceiling
 		if (_player.state == PLAYERSTATE_JUMPING) {
 			_player.state = PLAYERSTATE_FALLING;
 			_player.yspeed = -3;
@@ -1060,7 +1145,7 @@ void Player::setmaptileInfo()
 			setStateImg();
 		}
 
-		//사다리 타고 올라가는 상태라면 더 못올라가게만 막는다
+		// If holding ladder up state, push out downward
 		if (_player.state == PLAYERSTATE_HOLDING_LADDERUP) {
 			_player.pointy = midM.rc.bottom + (_player.rc.bottom - _player.rc.top) * 0.5 + 1;
 			_player.yspeed = 0;
@@ -1073,11 +1158,11 @@ void Player::setmaptileInfo()
 		}
 		break;
 
-		//내려갈 수 있는 발판의 경우 밑으로 튕겨낼 필요는 없다
+		// If ground can be fallen through, no need to push player out
 
 	case MAPTILE_GROUND_CAN_GO_DOWN_1:
-		//falling일 경우 아래로 부딪힌 상황이라면 위로 보내고 idle로 만든다
-		//하지만 아래에서 접근하면서도 falling 상태일 수도 있다. 이건 플레이어 위치와 속도로 예외처리
+		// If falling, when feet land on floor, transition to idle state
+		// It's possible to be falling while moving downward. This must be checked against player position and speed
 		if (_player.state == PLAYERSTATE_FALLING
 			&& _player.yspeed < -FALLPOWERMAX * 0.75) {
 			_player.pointy = midM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5f);
@@ -1097,15 +1182,15 @@ void Player::setmaptileInfo()
 
 
 	//botM
-	//기본적인 바닥의 역할
+	// Basic ground collision
 
 	switch (botM.type)
 	{
-		//아무것도 없거나 트랩일 경우
+		// Nothing or trap
 	case MAPTILE_NULL:
 	case MAPTILE_SPIKE_TRAP:
 
-		//가만히 있거나 움직이는 상황이라면 떨어진다
+		// If idle or moving with nothing below, fall
 		if (_player.state == PLAYERSTATE_IDLE || _player.state == PLAYERSTATE_MOVING
 			|| _player.state == PLAYERSTATE_LOOKING_DOWN || _player.state == PLAYERSTATE_LOOKING_DOWN_MOVING) {
 			_player.state = PLAYERSTATE_FALLING;
@@ -1113,21 +1198,21 @@ void Player::setmaptileInfo()
 			_player.yspeed = -3;
 		}
 
-		//사다리를 타고 있다면 그 자리에서 멈춘다
+		// If ladder tile exists, keep position on it
 		if (isCollision(_player.rc, botM.rc) && _player.state == PLAYERSTATE_HOLDING_LADDERDOWN) {
 			_player.pointy = botM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5);
 		}
 
-		//공격중이라면 떨어지면서 계속 공격한다
+		// If attacking while nothing below, transition to jump attack
 		if (_player.state == PLAYERSTATE_ATTACKING) {
 			_player.state = PLAYERSTATE_ATTACKING_JUMP;
 		}
 		break;
 
 
-		//사다리 타일
-	case MAPTILE_LADDER:
-		//가만히 있거나 움직이는 상황이라면 떨어진다
+		// Ladder tile
+		case MAPTILE_LADDER:
+		// If idle or moving with nothing below, fall
 		if (_player.state == PLAYERSTATE_IDLE || _player.state == PLAYERSTATE_MOVING
 			|| _player.state == PLAYERSTATE_LOOKING_DOWN || _player.state == PLAYERSTATE_LOOKING_DOWN_MOVING) {
 			_player.state = PLAYERSTATE_FALLING;
@@ -1135,19 +1220,19 @@ void Player::setmaptileInfo()
 			_player.yspeed = -3;
 		}
 
-		//공격중이라면 떨어지면서 계속 공격한다
+		// If attacking while nothing below, transition to jump attack
 		if (_player.state == PLAYERSTATE_ATTACKING) {
 			_player.state = PLAYERSTATE_ATTACKING_JUMP;
 		}
 		break;
 
 
-		//벽&땅일경우
+		// Wall & passable ground
 	case MAPTILE_WALL: case MAPTILE_WALL2:  case MAPTILE_GROUND_CAN_GO_DOWN_1:
-		//바닥에 착지 할 경우
+		// Stand on ground on collision
 		if (isCollision(_player.rc, botM.rc))
 		{
-			// 떨어지고 있거나 사다리 내려오는 중이라면 정상적으로 내려온다
+			// If falling or holding ladder down, land on the ground
 			if (_player.state == PLAYERSTATE_FALLING || _player.state == PLAYERSTATE_HOLDING_LADDERDOWN) {
 				_player.pointy = botM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5);
 				_player.currentFrameX = 8;
@@ -1157,11 +1242,11 @@ void Player::setmaptileInfo()
 				setStateImg();
 			}
 
-			// 공격중이라면 착지후 그대로 계속 공격한다			(착지중이라는 조건 추가, 즉 y스피드가 음수일때)
+			// If attacking jump, continue attacking on landing (Attacking jump flag added, when y speed is downward)
 			if (_player.state == PLAYERSTATE_ATTACKING_JUMP && _player.yspeed < 0) {
 				_player.pointy = botM.rc.top - ((_player.rc.bottom - _player.rc.top) * 0.5);
 				_player.xspeed = 0;
-				//_player.yspeed = 0; (공격중 점프를 위해 삭제)
+				//_player.yspeed = 0; (Keep attack momentum)
 				_player.state = PLAYERSTATE_ATTACKING;			
 			}
 
@@ -1170,29 +1255,29 @@ void Player::setmaptileInfo()
 			}
 		}
 		break;
-		//사다리일경우
+		// Ladder case
 	}
 
 
 	/*
 	//botR, botL
-	//대각선 밑에 걸치는 상황 고려
+	// Diagonal and outside position catch handling
 
-	//버벅거려서 주석 처리함
+	// Temporary minimal processing using collision
 
 	if (_player.state != PLAYERSTATE_IDLE && _player.state != PLAYERSTATE_MOVING) {
 		switch (botR.type)
 		{
-			//아무것도 없을경우
+			// Nothing below
 		case MAPTILE_NULL:	case MAPTILE_LADDER:
 			if (_player.state == PLAYERSTATE_IDLE || _player.state == PLAYERSTATE_MOVING) {
 				_player.state = PLAYERSTATE_FALLING;
 				_player.yspeed = -3;
 			}
 			break;
-			//벽&땅일경우
+			// Wall & passable ground
 		case MAPTILE_WALL: case MAPTILE_WALL2:  case MAPTILE_GROUND_CAN_GO_DOWN_1: case MAPTILE_GROUND_CAN_GO_DOWN_2:
-			//바닥에 착지 할 경우
+			// Stand on ground on collision
 			if (isCollision(_player.rc, botR.rc))
 			{
 				if (_player.state == PLAYERSTATE_FALLING) {
@@ -1202,24 +1287,24 @@ void Player::setmaptileInfo()
 					_player.yspeed = 0;
 					_player.state = PLAYERSTATE_IDLE;
 				}
-				//추가
+				// Add
 			}
 			break;
-			//사다리일경우
+			// Ladder case
 		}
 
 		switch (botL.type)
 		{
-			//아무것도 없을경우
+			// Nothing below
 		case MAPTILE_NULL:	case MAPTILE_LADDER:
 			if (_player.state == PLAYERSTATE_IDLE || _player.state == PLAYERSTATE_MOVING) {
 				_player.state = PLAYERSTATE_FALLING;
 				_player.yspeed = -3;
 			}
 			break;
-			//벽&땅일경우
+			// Wall & passable ground
 		case MAPTILE_WALL: case MAPTILE_WALL2:  case MAPTILE_GROUND_CAN_GO_DOWN_1: case MAPTILE_GROUND_CAN_GO_DOWN_2:
-			//바닥에 착지 할 경우
+			// Stand on ground on collision
 			if (isCollision(_player.rc, botL.rc))
 			{
 				if (_player.state == PLAYERSTATE_FALLING) {
@@ -1229,17 +1314,17 @@ void Player::setmaptileInfo()
 					_player.yspeed = 0;
 					_player.state = PLAYERSTATE_IDLE;
 				}
-				//추가
+				// Add
 			}
 			break;
-			//사다리일경우
+			// Ladder case
 		}
 	}
 
 	*/
 
 	//midR
-	//오른쪽 벽, 못지나가게 함
+	// Right side wall, push from right
 	switch (midR.type) {
 
 	case MAPTILE_WALL: case MAPTILE_WALL2:
@@ -1263,7 +1348,7 @@ void Player::setmaptileInfo()
 
 
 	//midL
-	//왼쪽 벽, 못지나가게 함
+	// Left side wall, push from left
 	switch (midL.type) {
 
 	case MAPTILE_WALL: case MAPTILE_WALL2:
@@ -1348,7 +1433,7 @@ void Player::enemyCollision() {
 }
 
 
-//공격 받았을 시 (데미지만)
+// When hit by damage (no knockback)
 void Player::getDamaged(int damage) {
 	
 	if (!_invincible) {
@@ -1375,7 +1460,7 @@ void Player::getDamaged(int damage) {
 	}
 
 }
-//공격 받았을 시 (데미지&넉백)
+// When hit by damage (angle & knockback)
 
 void Player::getDamaged(int damage, float angle, float knockbackpower) {
 	if (!_invincible) {
@@ -1418,7 +1503,7 @@ void Player::getDamaged(int damage, float angle, float knockbackpower) {
 }
 
 
-//상태이상(준비중)
+// Status effects (buff/debuff)
 void Player::checkStatusEffect() {
 
 	if (_player.state != PLAYERSTATE_DEAD) {
@@ -1433,30 +1518,30 @@ void Player::checkStatusEffect() {
 			_player.statusEffect[i].leftTime -= TIMEMANAGER->getElapsedTime();
 		}
 
-		//일정 주기마다 효과 일어남 (상태이상마다 시간 다르게 해야하나..?)
+		// Effect triggers every interval (should time differ per status effect..?)
 		if ((int)_statusEffectTimer % 300 == 0) {
 			for (int i = 0; i < 5; i++) {
 				switch (_player.statusEffect[i].type)
 				{
 				case STATUSEFFECT_NULL:
 					break;
-					//독 :: 넉백 없이 데미지만
+					// Poison :: damage over time
 				case STATUSEFFECT_POISON:
 					getDamaged(_player.statusEffect[i].damage);
 					break;
 
-					//화상 : 넉백 일어나면서 데미지
-					//(이대로 쓰려면 데미지를 늘리고 지속시간을 줄여야할듯)
+					// Fire : knockback while dealing damage
+					// (Currently raises gravity to increase fall speed / duration)
 				case STATUSEFFECT_FIRE:
 					if (_player.lookingRight)
 						getDamaged(_player.statusEffect[i].damage, PI, 1);
 					else
 						getDamaged(_player.statusEffect[i].damage, 0, 1);
 					break;
-					//스턴...?
+					// Stun...?
 				case STATUSEFFECT_STUN:
 					break;
-					//힐 : 최대체력 이하일 경우 회복
+					// Heal : recover to max hp
 				case STATUSEFFECT_HEAL:
 					int maxHP = 50 + _player.stat.vit * 10;
 					if (_player.stat.hp >= maxHP)
