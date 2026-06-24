@@ -19,8 +19,6 @@ private:
 	mapSceneList _mSceneList;
 	mapSceneList _mLoadingSceneList;
 
-	DWORD _loadingThreadID;
-
 public:
 	sceneManager();
 	~sceneManager();
@@ -30,14 +28,14 @@ public:
 	void update(void);
 	void render(void);
 
-	//¾À Ãß°¡
+	//Add scene
 	gameNode* addScene(string sceneName, gameNode* scene);
 	gameNode* addLoadingScene(string loadingSceneName, gameNode* scene);
 
 	HRESULT changeScene(string sceneName);
 	HRESULT changeScene(string sceneName, string loadingSceneName);
 
-	friend DWORD CALLBACK loadingThread(LPVOID prc);
+	friend void loadingThread();
 
 };
 

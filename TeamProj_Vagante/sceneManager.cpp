@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "sceneManager.h"
 #include "gameNode.h"
+#include <thread>
 
-DWORD CALLBACK loadingThread(LPVOID prc)
+void loadingThread()
 {
 	sceneManager::_readyScene->init();
 
@@ -10,8 +11,6 @@ DWORD CALLBACK loadingThread(LPVOID prc)
 	sceneManager::_loadingScene->release();
 	sceneManager::_loadingScene = NULL;
 	sceneManager::_readyScene = NULL;
-
-	return 0;
 }
 
 gameNode* sceneManager::_currentScene = NULL;
@@ -65,7 +64,7 @@ void sceneManager::render(void)
 }
 
 
-//씬 추가
+// Add scene
 gameNode* sceneManager::addScene(string sceneName, gameNode* scene)				 
 {
 	if (!scene) return NULL;
@@ -89,13 +88,13 @@ HRESULT sceneManager::changeScene(string sceneName)
 {
 	mapSceneIter find = _mSceneList.find(sceneName);
 
-	//해당 씬을 찾지 못했다면         실패했습니다!
+	// Scene not found
 	if (find == _mSceneList.end()) return E_FAIL;
 
-	//찾으려는 씬이 하필 현재 씬이면	 괜찮다고 전해라
+	// Already on this scene
 	if (find->second == _currentScene) return S_OK;
 
-	//무사히 바꿨으면
+	// Switch scene
 	if (SUCCEEDED(find->second->init()))
 	{
 		if (_currentScene) _currentScene->release();
@@ -119,7 +118,8 @@ HRESULT sceneManager::changeScene(string sceneName, string loadingSceneName)
 
 	mapSceneIter findLoading = _mLoadingSceneList.find(loadingSceneName);
 
-	if (find == _mLoadingSceneList.end()) return changeScene(loadingSceneName);
+	// Loading screen not registered; fall back to direct scene change
+	if (findLoading == _mLoadingSceneList.end()) return changeScene(loadingSceneName);
 
 	if (SUCCEEDED(find->second->init()))
 	{
@@ -129,10 +129,9 @@ HRESULT sceneManager::changeScene(string sceneName, string loadingSceneName)
 
 		_readyScene = find->second;
 
-		CloseHandle(CreateThread(NULL, 0, loadingThread, NULL, 0, &_loadingThreadID));
+		std::thread t(loadingThread);
+		t.detach();
 	}
 
 	return E_FAIL;
 }
-
-
