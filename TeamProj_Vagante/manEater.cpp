@@ -8,7 +8,7 @@ manEater::manEater()
 manEater::~manEater()
 {
 }
-				  //맨이터는 mincog랑 maxCog랑 동일합니다.
+				  // Constructor receives minCog and maxCog
 HRESULT manEater::init(POINT point, float minCog, float maxCog)
 {
 	_state = ENEMYSTATE_IDLE;
@@ -30,9 +30,9 @@ HRESULT manEater::init(POINT point, float minCog, float maxCog)
 	_attackAfteri = new image;
 	_deadi = new image;
 	
-	_deadi->init("manEater_dead.bmp", 32, 32,1,1, true, RGB(255, 0, 255));
-	_attacki->init("manEater_attack.bmp", 64, 32, 2, 1, true, RGB(255, 0, 255));
-	_attackAfteri->init("manEater_after_attack.bmp", 224, 32, 7, 1, true, RGB(255, 0, 255));
+	_deadi->init("Img/enemy/manEater_dead.bmp", 32, 32, 1, 1, true, RGB(255, 0, 255));
+	_attacki->init("Img/enemy/manEater_attack.bmp", 64, 32, 2, 1, true, RGB(255, 0, 255));
+	_attackAfteri->init("Img/enemy/manEater_after_attack.bmp", 224, 32, 7, 1, true, RGB(255, 0, 255));
 
 	_statistics.hp = 3;
 	_statistics.str = 1;
@@ -75,24 +75,24 @@ void manEater::release()
 void manEater::update()
 {
 
-	//if (KEYMANAGER->isOnceKeyDown('M')) //줘맞는거 확인용
+	//if (KEYMANAGER->isOnceKeyDown('M')) // For checking button press
 	//{
 	//	getDamaged(1);
 	//}
 
 
-	if (PtInRect(&_findRectRange,_player->getPoint())) //탐색
+	if (PtInRect(&_findRectRange,_player->getPoint())) // Detection
 	{
 		_isFindPlayer = true;
 	}
 
 	if (_isFindPlayer == true)
 	{
-		attack();//공격함수
-		frameUpdate();//프레임을 움직여주는 함수
+		attack();// Attack function
+		frameUpdate();// Function to execute frame update
 	}
 
-	if (_statistics.hp <= 0)//사망체크
+	if (_statistics.hp <= 0)// Death check
 	{
 		_image = _deadi;
 	}
@@ -115,9 +115,13 @@ void manEater::render(POINT camera)
 
 void manEater::draw(POINT camera)
 {
-	//Rectangle(getMemDC(), _findRectRange.left + camera.x, _findRectRange.top + camera.y, _findRectRange.right + camera.x, _findRectRange.bottom + camera.y); //플레이어 위치 탐색 확인용
+	//Rectangle(getMemDC(), _findRectRange.left + camera.x, _findRectRange.top + camera.y, _findRectRange.right + camera.x, _findRectRange.bottom + camera.y); // For confirming player position detection
 	//_image->frameRender(getMemDC(), _rc.left + camera.x, _rc.top + camera.y, _currentFrameX, 0);
-	_image->alphaFrameRender(getMemDC(), _rc.left + camera.x, _rc.top + camera.y, _currentFrameX, 0,_deadAlpha);
+	if (!_image)
+		return;
+
+	_image->alphaFrameRender(getMemDC(), _rc.left + camera.x, _rc.top + camera.y,
+		_currentFrameX, 0, getSpriteAlpha());
 
 	//_image->alphaFrameRender(getMemDC(), _rc.left + camera.x, _rc.top + camera.y, _currentFrameX, 0);
 	//Rectangle(getMemDC(), 50,50,100,100);
@@ -130,35 +134,36 @@ void manEater::draw(POINT camera)
 
 void manEater::attack()
 {
-	//이제 이미지가 돈다 만세!
-	if (_currentFrameX > _image->getMaxFrameX() && _state == ENEMYSTATE_IDLE) // 공격하려고 올라온다
+	// Start changing to attack image!
+	if (_currentFrameX > _image->getMaxFrameX() && _state == ENEMYSTATE_IDLE) // Rising to attack
 	{
-		_rc = RectMake(_pointx, _pointy, 0, 0);//공격 및 피격렉트 설정 // 맞지않고 때려야하니 피격렉트 해제
-		_attackRect = RectMake(_pointx, _pointy, TILESIZE, TILESIZE);	 //공격 및 피격렉트 설정
-		_statistics.mel = RND->getFromIntTo(4, 15);			 //공격력
-		_currentFrameX = 0;									 //프레임 초기화
-		_image = _attackAfteri;								 //이미지 재설정
-		_state = ENEMYSTATE_ATTACKING;						 //상태설정 
+		_rc = RectMake(_pointx, _pointy, 0, 0);// Idle collision rect size // Non-attacking idle collision rect size
+		_attackRect = RectMake(_pointx, _pointy, TILESIZE, TILESIZE);	 // Attack collision rect size
+		_statistics.mel = RND->getFromIntTo(4, 15);			 // Attack power
+		_currentFrameX = 0;									 // Reset frame
+		_image = _attackAfteri;								 // Reset image
+		_state = ENEMYSTATE_ATTACKING;						 // State change 
 	}
 	
-	if (_currentFrameX >= _image->getMaxFrameX() && _state == ENEMYSTATE_ATTACKING) //공격하고 내려간다 
+	if (_currentFrameX >= _image->getMaxFrameX() && _state == ENEMYSTATE_ATTACKING) // After attacking, return 
 	{
-		_rc = RectMake(_pointx, _pointy, TILESIZE, TILESIZE);//공격 및 피격렉트 설정
-		_attackRect = RectMake(_pointx, _pointy, 0, 0);	 //공격 및 피격렉트 설정 // 줘맞아야 하니까 공격렉트 해제
-		//_statistics.mel = RND->getFromIntTo(4, 15);			 //공격력
-		_currentFrameX = 0;									 //프레임 초기화
-		_image = _image = _attacki;					         //이미지 재설정
-		_state = ENEMYSTATE_IDLE;					      	 //상태설정 
+		_rc = RectMake(_pointx, _pointy, TILESIZE, TILESIZE);// Attack collision rect size
+		_attackRect = RectMake(_pointx, _pointy, 0, 0);	 // Attack collision rect size // Remove attack rect for death
+		//_statistics.mel = RND->getFromIntTo(4, 15);			 // Attack power
+		_currentFrameX = 0;									 // Reset frame
+		_image = _image = _attacki;					         // Reset image
+		_state = ENEMYSTATE_IDLE;					      	 // State change 
 
 		_isFindPlayer = false;
 	}
 
 	RECT temp;
+	RECT playerRect = _player->getRect();
 
-	if (IntersectRect(&temp, &_player->getRect(), &_attackRect)) //플레이어를 공격했다.
+	if (IntersectRect(&temp, &playerRect, &_attackRect)) // Hit the player
 	{
 		_player->getDamaged(5, getAngle(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y), _statistics.mel);
-		//플레이어 반대방향으로 튕겨나기
+		// Knock player back in opposite direction
 		_xspeed = cosf(getAngle(_player->getPoint().x, _player->getPoint().y, _pointx, _pointy)) * 2;
 		_yspeed = -sinf(getAngle(_player->getPoint().x, _player->getPoint().y, _pointx, _pointy)) * 2;
 
@@ -172,7 +177,7 @@ void manEater::attack()
 
 void manEater::frameUpdate()
 {
-	//프레임을 업데이트 한다. 웬만해선 건들지 말자
+	// Execute frame update to render
 
 	_frameFPS = 10;
 	_frameTime++;
@@ -180,7 +185,7 @@ void manEater::frameUpdate()
 	{
 		_currentFrameX++;
 		_frameTime = 0;
-		//if (_statistics.hp <= 0) //죽으면 사라지는거
+		//if (_statistics.hp <= 0) // When last frame
 		//{
 		//
 		//}

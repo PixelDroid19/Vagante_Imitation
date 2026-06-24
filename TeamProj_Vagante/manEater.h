@@ -22,8 +22,8 @@ public:
 	void render(POINT camera);
 	void draw(POINT camera);
 
-	void attack();			// 공격
-	void frameUpdate();	// 프레임 업데이트
+	void attack();			// Attack
+	void frameUpdate();	// Frame update
 
 	void getDamaged(int damage, float angle, float knockbackpower)
 	{

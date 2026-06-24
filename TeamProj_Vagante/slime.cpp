@@ -13,21 +13,21 @@ slime::~slime()
 HRESULT slime::init(POINT point, float minCog, float maxCog)
 {
 	//_image = IMAGEMANAGER->findImage("wormMoveUp");
-	//자식클래스에서 각자 초기화하기
-	//인식,최대
+	// Initialize self-cognition range
+	// Min, Max
 	_minCog = minCog;
 	_maxCog = maxCog;
 
-	//최초 생성위치
+	// Initial spawn position
 	_pointx = point.x;
 	_pointy = point.y;
 
 
 	_xspeed = _yspeed = _angle = _gravity = 0;
-	//뿌릴 돈
+	// Drop money
 	_money = RND->getFromIntTo(5, 1);
 
-	//박쥐 스탯 임의로 때려박기
+	// Generate stats randomly
 	_statistics.hp = 20;
 	_statistics.str = 7;
 	_statistics.dex = 2;
@@ -45,12 +45,12 @@ HRESULT slime::init(POINT point, float minCog, float maxCog)
 	_statistics.aspd = 0;
 	_statistics.spd = 1;
 
-	//죽었는지 확인용
+	// Death check
 	_dead = false;
 	_deadAlpha = 0;
 	_rc = RectMakeCenter(_pointx, _pointy, 25, 25);
-	_isFindPlayer = false;	//플레이어 탐지여부
-	_isOnTop = false;			//천장에 닿았는지 여부
+	_isFindPlayer = false;	// Player detection range
+	_isOnTop = false;			// Check whether on ceiling
 	_image = IMAGEMANAGER->findImage("slime_Idle");
 	_currentFrameX = 0;
 	_currentFrameY = 0;
@@ -66,7 +66,7 @@ void slime::update()
 
 	if (_slimeState != SLIMESTATE_DEAD)
 	{
-		//인식범위 내에 플레이어가 있으면 활성화, 아닐 시 비활성화
+		// Activate if player within detection range, deactivate otherwise
 		if (getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) < 400) _isFindPlayer = true;
 		else _isFindPlayer = false;
 		actByState();
@@ -107,21 +107,21 @@ void slime::actByState()
 	switch (_slimeState)
 	{
 	case SLIMESTATE_IDLE:
-		//플레이어 포착시
+		// When player detected
 		if (_isFindPlayer)
 		{
-			//움직임
+			// Move
 			_slimeState = SLIMESTATE_MOVING;
 		}
 		break;
 	case SLIMESTATE_MOVING:
-		//플레이어 포착 시
+		// While player detected
 		if (_isFindPlayer)
 		{
-			//플레이어 방향으로 움직임(x축 무빙)
+			// Move towards player (x axis)
 			if (_player->getPoint().x > _pointx)
 			{
-				//속도제한
+				// Increase speed
 				if (abs(_xspeed) < 1)
 					_xspeed += 1;
 			}
@@ -130,10 +130,10 @@ void slime::actByState()
 				if (abs(_xspeed) < 1)
 					_xspeed -= 1;
 			}
-			//플레이어가 슬라임보다 위에 있을 시
+			// When player is above
 			if (_pointy > _player->getPoint().y)
 			{
-				//점프 쿨타임 돌면~
+				// Jump timer done
 				if (TIMEMANAGER->getWorldTime() - _jumptimer > 4)
 				{
 					_yspeed -= 10;
@@ -145,13 +145,13 @@ void slime::actByState()
 		break;
 	case SLIMESTATE_JUMPING:
 		if (_yspeed > 0) _slimeState = SLIMESTATE_FALLING;
-		//플레이어 포착 시
+		// While player detected
 		if (_isFindPlayer)
 		{
-			//플레이어 방향으로 움직임(x축 무빙)
+			// Move towards player (x axis)
 			if (_player->getPoint().x > _pointx)
 			{
-				//속도제한
+				// Increase speed
 				if (abs(_xspeed) < 1)
 					_xspeed += 1;
 			}
@@ -163,13 +163,13 @@ void slime::actByState()
 		}
 		break;
 	case SLIMESTATE_FALLING:
-		//플레이어 포착 시
+		// While player detected
 		if (_isFindPlayer)
 		{
-			//플레이어 방향으로 움직임(x축 무빙)
+			// Move towards player (x axis)
 			if (_player->getPoint().x > _pointx)
 			{
-				//속도제한
+				// Increase speed
 				if (abs(_xspeed) < 1)
 					_xspeed += 1;
 			}
@@ -196,36 +196,37 @@ void slime::draw(POINT camera)
 	_image->alphaFrameRender(getMemDC(),
 		_pointx - _image->getFrameWidth() / 2 + camera.x,
 		_pointy - _image->getFrameHeight() / 2 + camera.y,
-		_currentFrameX, _currentFrameY, _deadAlpha);
+		_currentFrameX, _currentFrameY, getSpriteAlpha());
 }
 void slime::move()
 {
 	_pointx += _xspeed;
 	_pointy += _yspeed;
 
-	//속도 감속
+	// Speed decrease
 	if (_xspeed > 0) _xspeed -= 0.1;
 	else if (_xspeed < 0) _xspeed += 0.1;
 	if (_yspeed > 0) _yspeed -= 0.1;
 	else if (_yspeed < 0) _yspeed += 0.1;
 
-	//속도 한계치
+	// Speed limit
 	if (_xspeed > 2) _xspeed = 2;
 	else if (_xspeed < -2) _xspeed = -2;
 
-	//중력처리
+	// Gravity processing
 	_yspeed += 0.3;
 }
 
 void slime::hitPlayer()
 {
 	RECT temp;
-	//충돌시
-	if (IntersectRect(&temp, &_player->getRect(), &_rc))
+	// On collision
+	RECT playerRect = _player->getRect();
+	if (IntersectRect(&temp, &playerRect, &_rc))
 	{
-		//플레이어 데미지 주기
+		// Damage player
 		_player->getDamaged(5, getAngle(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y), 3);
-		//플레이어 반대방향으로 튕겨나기
+		// Knock player back in opposite direction
 		_xspeed = cosf(getAngle(_player->getPoint().x, _player->getPoint().y, _pointx, _pointy)) * 2;
 		_yspeed = -sinf(getAngle(_player->getPoint().x, _player->getPoint().y, _pointx, _pointy)) * 2;
 	}

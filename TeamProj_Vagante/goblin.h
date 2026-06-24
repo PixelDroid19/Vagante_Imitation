@@ -25,6 +25,7 @@ public:
 	void update();
 	void render(POINT camera);
 	void draw(POINT camera);
+	void drawDebug(POINT camera);
 
 	void move();
 	void jump();

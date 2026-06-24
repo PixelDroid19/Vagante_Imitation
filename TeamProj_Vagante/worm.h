@@ -17,19 +17,19 @@ private:
 	bool _reverseFrame;
 
 public:
-	//생성 위치, 최소인식범위, 최대인식범위
+	//Initial position, minimum perception range, maximum perception range
 	HRESULT init(POINT point, float minCog, float maxCog);
-	void falling();			// 낙하 처리
-	void rectResize();		// 혹시 rect 사이즈 변경 필요시 여길 통해서
+	void falling();			// Falling handling
+	void rectResize();		// In case rect resize is needed for any reason
 	void update();
 	void render(POINT camera);
 	void draw(POINT camera);
-	void move();			// 이동관련함수
-	void attack();			// 공격
-	void frameUpdate();	// 프레임 업데이트
-	void playerCog() {	_isFindPlayer = true;}	// 얜 플레이어 인식여부 관계없이 그냥 움직인다
+	void move();			// Movement function
+	void attack();			// Attack
+	void frameUpdate();	// Frame update
+	void playerCog() {	_isFindPlayer = true;}	// In immediate player perception, set to true unconditionally
 
-	//데미지 입을때 지렁이는 떨어질때만 처리하므로 따로 처리합니다
+	//Since damage and death are processed in the base class, handle it here
 	void getDamaged(int damage) { 
 		_statistics.hp -= damage; _ui->hitOutput(_pointx, _pointy, damage, LETTER_RED);
 		SOUNDMANAGER->play("5_Enemy_Demage_Sound", 1);
@@ -41,10 +41,9 @@ public:
 		SOUNDMANAGER->play("5_Enemy_Demage_Sound", 1);
 	}
 
-	void isThereWall();									//가는 방향에 지형 변화가 있나요?
-	void isDig();										//파묻혀있나요?
+	void isThereWall();									//Check if there's a wall to change direction?
+	void isDig();										//Check if stuck in ground (dig)?
 
 	worm();
 	~worm();
 };
-

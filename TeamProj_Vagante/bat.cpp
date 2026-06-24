@@ -15,21 +15,21 @@ bat::~bat()
 HRESULT bat::init(POINT point, float minCog, float maxCog)
 {
 	//_image = IMAGEMANAGER->findImage("wormMoveUp");
-	//자식클래스에서 각자 초기화하기
-	//인식,최대
+	//Initialize self-cognition range
+	//Min, Max
 	_minCog = minCog;
 	_maxCog = maxCog;
 
-	//최초 생성위치
+	//Initialize spawn position
 	_pointx = point.x;
 	_pointy = point.y;
 
 
 	_xspeed = _yspeed = _angle = _gravity = 0;
-	//뿌릴 돈
+	//Drop money
 	_money = RND->getFromIntTo(5, 1);
 
-	//박쥐 스탯 임의로 때려박기
+	//Initialize stats randomly
 	_statistics.hp = 7;
 	_statistics.str = 5;
 	_statistics.dex = 2;
@@ -47,12 +47,12 @@ HRESULT bat::init(POINT point, float minCog, float maxCog)
 	_statistics.aspd = 0;
 	_statistics.spd = 1;
 
-	//죽었는지 확인용
+	//Check death
 	_dead = false;
 	_deadAlpha = 0;
 	_rc = RectMakeCenter(_pointx, _pointy, 10, 10);
-	_isFindPlayer = true;	//플레이어 탐지여부
-	_isOnTop = false;			//천장에 닿았는지 여부
+	_isFindPlayer = true;	//Player detection range
+	_isOnTop = false;			//Whether on ceiling
 	_image = IMAGEMANAGER->findImage("batflying");
 	_currentFrameX = 0;
 	_currentFrameY = 0;
@@ -63,7 +63,7 @@ HRESULT bat::init(POINT point, float minCog, float maxCog)
 
 void bat::update() {
 
-	//인식범위 내에 플레이어가 있으면 활성화, 아닐 시 비활성화
+	//If player is within detection range, activate; otherwise deactivate
 	if (getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) < 200) _isFindPlayer = true;
 	else _isFindPlayer = false;
 	actByState();
@@ -96,7 +96,7 @@ void bat::move()
 	if (abs(_xspeed) <= 0.5) _xspeed = 0;
 	if (abs(_yspeed) <= 0.5) _yspeed = 0;
 
-	//속도 한계치
+	//Speed limit
 	if (_xspeed > 2) _xspeed = 2;
 	else if (_xspeed < -2) _xspeed = -2;
 	if (_yspeed > 2) _yspeed = 2;
@@ -142,7 +142,8 @@ void bat::actByState()
 void bat::hitPlayer()
 {
 	RECT temp;
-	if (IntersectRect(&temp, &_player->getRect(), &_rc))
+	RECT playerRect = _player->getRect();
+	if (IntersectRect(&temp, &playerRect, &_rc))
 	{
 		_player->getDamaged(5, getAngle(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y), _statistics.str);
 		_xspeed = cosf(getAngle(_player->getPoint().x, _player->getPoint().y, _pointx, _pointy)) * 10;
@@ -248,7 +249,7 @@ void bat::draw(POINT camera)
 	_image->alphaFrameRender(getMemDC(),
 		_pointx - _image->getFrameWidth() / 2 + camera.x,
 		_pointy - _image->getFrameHeight() / 2 + camera.y,
-		_currentFrameX, _currentFrameY, _deadAlpha);
+		_currentFrameX, _currentFrameY, getSpriteAlpha());
 }
 
 void bat::frameUpdate()
