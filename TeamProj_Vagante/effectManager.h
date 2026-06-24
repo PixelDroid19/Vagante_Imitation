@@ -8,13 +8,13 @@ class effect;
 class effectManager : public singletonBase <effectManager>
 {
 private:
-	//생산
+	// Effect
 	typedef vector<effect*> arrEffects;
 	typedef vector<effect*>::iterator iterEffects;
-	//가공
+	// Effects
 	typedef map<string, arrEffects> arrEffect;
 	typedef map<string, arrEffects>::iterator iterEffect;
-	//포장
+	// Total effects
 	typedef vector<map<string, arrEffects>> arrTotalEffect;
 	typedef vector<map<string, arrEffects>>::iterator iterTotalEffect;
 
@@ -35,4 +35,3 @@ public:
 	effectManager();
 	~effectManager();
 };
-

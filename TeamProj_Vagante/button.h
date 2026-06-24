@@ -1,17 +1,17 @@
 #pragma once
 #include "gameNode.h"
 
-//콜백함수 함수포인터
+// Callback function pointer
 typedef void(*CALLBACK_FUNCTION)(void);
 
 //<Functional>
-//이 라이브러리	std::Function
+// Or template	std::Function
 //				std::move
 //				std::bind
-//일반 멤버변수, 멤버변수 참조 가능하게 됨
-//함정) 의외로 쉬운게 함정
+// Use when extending general classes or windows
+// Example: externally created object
 
-//콜백함수를 변형시켜보시요 
+// Consider using callback functions
 
 enum BUTTONDIRECTION
 {
@@ -23,10 +23,10 @@ enum BUTTONDIRECTION
 class button : public gameNode
 {
 private:
-	BUTTONDIRECTION _direction;		//버튼 이넘
+	BUTTONDIRECTION _direction;		// Button direction
 
-	const char* _imageName;			//버튼 이미지 이름
-	image* _image;					//버튼 이미지
+	const char* _imageName;			// Button image name
+	image* _image;					// Button image
 	RECT _rc;
 	float _x, _y;
 
@@ -48,4 +48,3 @@ public:
 	button();
 	~button();
 };
-

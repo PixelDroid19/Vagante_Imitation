@@ -16,8 +16,8 @@ HRESULT mainGame::init(void)
 {
 	gameNode::init(true);
 	
-	SCENEMANAGER->addScene("게임씬", new GameScene);
-	SCENEMANAGER->changeScene("게임씬");
+	SCENEMANAGER->addScene("GameScene", new GameScene);
+	SCENEMANAGER->changeScene("GameScene");
 	return S_OK;
 }
 
@@ -40,15 +40,8 @@ void mainGame::update(void)
 
 void mainGame::render(void)	
 {
-	//흰색 도화지 한 장 필요
-	PatBlt(getMemDC(), 0, 0, WINSIZEX, WINSIZEY, WHITENESS);
-	//==============================================================
+	SDL_SetRenderDrawColor(getMemDC(), 255, 255, 255, 255);
+	SDL_RenderClear(getMemDC());
 
 	SCENEMANAGER->render();
-	
-	
-	//========================================================================
-	//백버퍼에 있는걸 HDC로 그려주는 역할
-	this->getBackBuffer()->render(getHDC(), 0, 0);
-
 }
