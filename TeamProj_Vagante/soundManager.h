@@ -2,31 +2,25 @@
 #include "singletonBase.h"
 #include <map>
 
-#include "inc/fmod.hpp"
-
-#pragma comment(lib, "lib/fmodex_vc.lib")
-
-using namespace FMOD;
-
-#define SOUNDBUFFER 10
-#define EXTRACHANNELBUFFER 5
-
-#define TOTALSOUNDBUFFER SOUNDBUFFER + EXTRACHANNELBUFFER
+#define TOTALSOUNDBUFFER 30
 
 class soundManager : public singletonBase<soundManager>
 {
 private:
-	typedef map<string, Sound**> arrSounds;
-	typedef map<string, Sound**>::iterator arrSoundsIter;
-	typedef map<string, Channel**> arrChannels;
-	typedef map<string, Channel**>::iterator arrChannelsIter;
+	struct SoundEntry {
+		Uint8* wavBuffer;
+		Uint32 wavLength;
+		SDL_AudioSpec wavSpec;
+		SDL_AudioDeviceID deviceId;
+		bool isBGM;
+	};
+
+	typedef map<string, SoundEntry> arrSounds;
+	typedef map<string, SoundEntry>::iterator arrSoundsIter;
 
 private:
-	System* _system;
-	Sound** _sound;
-	Channel** _channel;
-
 	arrSounds _mTotalSounds;
+	SDL_AudioDeviceID _audioDevice;
 
 public:
 	HRESULT init(void);
@@ -34,7 +28,7 @@ public:
 	void update(void);
 
 	void addSound(string keyName, string soundName, bool bgm, bool loop);
-	void play(string keyName, float volume = 1.0f); // 0.0 ~ 1.0f == 0 ~ 255
+	void play(string keyName, float volume = 1.0f);
 	void stop(string keyName);
 	void pause(string keyName);
 	void resume(string keyName);
@@ -42,8 +36,6 @@ public:
 	bool isPlaySound(string keyName);
 	bool isPauseSound(string keyName);
 
-
 	soundManager();
 	~soundManager();
 };
-

@@ -1,207 +1,118 @@
 #include "stdafx.h"
 #include "soundManager.h"
 
-
 soundManager::soundManager()
-	:_system(NULL),
-	_channel(NULL),
-	_sound(NULL)
+	: _audioDevice(0)
 {
 }
 
-
 soundManager::~soundManager()
 {
-
 }
 
 HRESULT soundManager::init(void)
 {
-	System_Create(&_system);
+	SDL_AudioSpec want;
+	SDL_zero(want);
+	want.freq = 44100;
+	want.format = AUDIO_S16SYS;
+	want.channels = 2;
+	want.samples = 2048;
 
-	_system->init(TOTALSOUNDBUFFER, FMOD_INIT_NORMAL, NULL);
+	_audioDevice = SDL_OpenAudioDevice(NULL, 0, &want, NULL, SDL_AUDIO_ALLOW_ANY_CHANGE);
+	if (_audioDevice == 0)
+	{
+		char buf[256];
+		sprintf(buf, "Failed to open audio device: %s", SDL_GetError());
+		return E_FAIL;
+	}
 
-	_sound = new Sound*[TOTALSOUNDBUFFER];
-	_channel = new Channel*[TOTALSOUNDBUFFER];
-
-	memset(_sound, 0, sizeof(Sound*) * (TOTALSOUNDBUFFER));
-	memset(_channel, 0, sizeof(Channel*) * (TOTALSOUNDBUFFER));
-
+	SDL_PauseAudioDevice(_audioDevice, 0);
 
 	return S_OK;
 }
 
 void soundManager::release(void)
 {
-	//사운드 삭제
-	if (_channel != NULL || _sound != NULL)
+	for (arrSoundsIter it = _mTotalSounds.begin(); it != _mTotalSounds.end(); ++it)
 	{
-		for (int i = 0; i < TOTALSOUNDBUFFER; i++)
+		if (it->second.wavBuffer)
 		{
-			if (_channel != NULL)
+			if (it->second.deviceId > 0 && it->second.deviceId != _audioDevice)
 			{
-				if (_channel[i]) _channel[i]->stop();
+				SDL_CloseAudioDevice(it->second.deviceId);
 			}
-
-			if (_sound != NULL)
-			{
-				if (_sound != NULL) _sound[i]->release();
-			}
+			SDL_FreeWAV(it->second.wavBuffer);
 		}
 	}
+	_mTotalSounds.clear();
 
-	//메모리 지우기
-	SAFE_DELETE_ARRAY(_channel);
-	SAFE_DELETE_ARRAY(_sound);
-
-	//시스템 닫기 
-	if (_system != NULL)
+	if (_audioDevice > 0)
 	{
-		_system->release();
-		_system->close();
+		SDL_CloseAudioDevice(_audioDevice);
+		_audioDevice = 0;
 	}
 }
 
-void soundManager::update(void)	
+void soundManager::update(void)
 {
-	//사운드 System 계속적으로 업데이트
-	_system->update();
-
-	//볼륨이 바뀌거나 
-	//재생이 끝난 사운드를 채널에서 빼내는등의 다양한
-	//작업을 자동으로 해준다
 }
-
 
 void soundManager::addSound(string keyName, string soundName, bool bgm, bool loop)
 {
-	if (loop)
+	SoundEntry entry;
+	SDL_zero(entry);
+
+	if (!SDL_LoadWAV(soundName.c_str(), &entry.wavSpec, &entry.wavBuffer, &entry.wavLength))
 	{
-		if (bgm)
-		{
-			_system->createStream(soundName.c_str(), FMOD_LOOP_NORMAL, NULL, &_sound[_mTotalSounds.size()]);
-		}
-		else
-		{
-			_system->createSound(soundName.c_str(), FMOD_LOOP_NORMAL, NULL, &_sound[_mTotalSounds.size()]);
-		}
-	}
-	else
-	{
-		if (bgm)
-		{
-			_system->createStream(soundName.c_str(), FMOD_DEFAULT, NULL, &_sound[_mTotalSounds.size()]);
-		}
-		else
-		{
-			_system->createSound(soundName.c_str(), FMOD_DEFAULT, NULL, &_sound[_mTotalSounds.size()]);
-		}
+		char buf[256];
+		sprintf(buf, "Failed to load sound: %s, SDL error: %s",
+			soundName.c_str(), SDL_GetError());
+		return;
 	}
 
-	_mTotalSounds.insert(make_pair(keyName, &_sound[_mTotalSounds.size()]));
+	entry.isBGM = bgm;
+	entry.deviceId = _audioDevice;
+
+	_mTotalSounds.insert(pair<string, SoundEntry>(keyName, entry));
 }
 
-void soundManager::play(string keyName, float volume) 							  
+void soundManager::play(string keyName, float volume)
 {
-	arrSoundsIter iter = _mTotalSounds.begin();
+	arrSoundsIter it = _mTotalSounds.find(keyName);
+	if (it == _mTotalSounds.end()) return;
 
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
+	Uint8* buffer = it->second.wavBuffer;
+	Uint32 length = it->second.wavLength;
+
+	SDL_ClearQueuedAudio(_audioDevice);
+	if (SDL_QueueAudio(_audioDevice, buffer, length) < 0)
 	{
-		if (keyName == iter->first)
-		{
-			_system->playSound(FMOD_CHANNEL_FREE, _sound[count], false, &_channel[count]);
-
-			_channel[count]->setVolume(volume);
-			break;
-		}
-	}
-
-}
-
-void soundManager::stop(string keyName)											  
-{
-	arrSoundsIter iter = _mTotalSounds.begin();
-
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
-	{
-		if (keyName == iter->first)
-		{
-			_channel[count]->stop();
-			
-			break;
-		}
+		return;
 	}
 }
 
-void soundManager::pause(string keyName)										  
+void soundManager::stop(string keyName)
 {
-	arrSoundsIter iter = _mTotalSounds.begin();
-
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
-	{
-		if (keyName == iter->first)
-		{
-			_channel[count]->setPaused(true);
-
-			break;
-		}
-	}
+	SDL_ClearQueuedAudio(_audioDevice);
 }
 
-void soundManager::resume(string keyName)										  
+void soundManager::pause(string keyName)
 {
-	arrSoundsIter iter = _mTotalSounds.begin();
-
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
-	{
-		if (keyName == iter->first)
-		{
-			_channel[count]->setPaused(false);
-
-			break;
-		}
-	}
+	SDL_PauseAudioDevice(_audioDevice, 1);
 }
 
-
-bool soundManager::isPlaySound(string keyName) 
+void soundManager::resume(string keyName)
 {
-	bool isPlay;
-	arrSoundsIter iter = _mTotalSounds.begin();
+	SDL_PauseAudioDevice(_audioDevice, 0);
+}
 
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
-	{
-		if (keyName == iter->first)
-		{
-			_channel[count]->isPlaying(&isPlay);
-
-			break;
-		}
-	}
-
-	return isPlay;
+bool soundManager::isPlaySound(string keyName)
+{
+	return SDL_GetQueuedAudioSize(_audioDevice) > 0;
 }
 
 bool soundManager::isPauseSound(string keyName)
 {
-	bool isPaused;
-	arrSoundsIter iter = _mTotalSounds.begin();
-
-	int count = 0;
-	for (iter; iter != _mTotalSounds.end(); ++iter, count++)
-	{
-		if (keyName == iter->first)
-		{
-			_channel[count]->getPaused(&isPaused);
-
-			break;
-		}
-	}
-
-	return isPaused;
+	return false;
 }
