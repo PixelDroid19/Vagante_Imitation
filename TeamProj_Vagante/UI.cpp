@@ -467,7 +467,7 @@ void UI::draw(POINT camera)
 		char str[10];
 		letterMacro2(_viHit->font, _viHit->x + camera.x , _viHit->y + camera.y, itoa(_viHit->damage, str, 10), _viHit->alphaSource);
 	}
-	//미니맵 그리기
+	//Draw minimap
 	_map->drawMinimap();
 }
 
@@ -1577,13 +1577,13 @@ void UI::keyControl()
 		if (_menuNum > 3) _menuNum = 0;
 		setInputGuide();
 	}
-	if (KEYMANAGER->isOnceKeyDown('A'))
+	if (KEYMANAGER->isOnceKeyDown(VK_A))
 	{
 		_menuNum--;
 		if (_menuNum < 0) _menuNum = 3;
 		setInputGuide();
 	}
-	if (KEYMANAGER->isOnceKeyDown('Z'))
+	if (KEYMANAGER->isOnceKeyDown(VK_Z))
 	{
 		switch (_menuNum)
 		{
@@ -1631,7 +1631,7 @@ void UI::keyControl()
 		}
 		setInputGuide();
 	}
-	if (KEYMANAGER->isOnceKeyDown('X'))
+	if (KEYMANAGER->isOnceKeyDown(VK_X))
 	{
 		switch (_menuNum)
 		{
@@ -1815,9 +1815,9 @@ void UI::hpBottomNumberMacro(float x, float y, int num)
 
 }
 
-void UI::letterMacro(LETTERFONT font, float x, float y, char *str)
+void UI::letterMacro(LETTERFONT font, float x, float y, const char *str)
 {
-	for (int i = 0; *(str + i) != NULL; i++)
+	for (int i = 0; *(str + i) != '\0'; i++)
 	{
 		int sour;
 		int dest = 0;
@@ -1845,9 +1845,9 @@ void UI::letterMacro(LETTERFONT font, float x, float y, char *str)
 
 }
 
-void UI::letterMacro(LETTERFONT font, float x, float y, char *str, int alpha)
+void UI::letterMacro(LETTERFONT font, float x, float y, const char *str, int alpha)
 {
-	for (int i = 0; *(str + i) != NULL; i++)
+	for (int i = 0; *(str + i) != '\0'; i++)
 	{
 		int sour;
 		int dest = 0;
@@ -1875,10 +1875,9 @@ void UI::letterMacro(LETTERFONT font, float x, float y, char *str, int alpha)
 
 }
 
-void UI::letterMacro2(LETTERFONT font, float x, float y, char *str, int alpha)
+void UI::letterMacro2(LETTERFONT font, float x, float y, const char *str, int alpha)
 {
-
-	for (int i = 0; *(str + i) != NULL; i++)
+	for (int i = 0; *(str + i) != '\0'; i++)
 	{
 		int sour;
 		int dest = 0;

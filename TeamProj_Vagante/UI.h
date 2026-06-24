@@ -63,9 +63,9 @@ struct tagItem
 };
 
 struct tagCoinInfo {
-	image* img;		//동전 이미지
-	POINT point;	//동전 좌표(맵에 있을 시)
-	RECT rc;		//동전 렉트(맵에 있을 시 사용)
+	image* img;		//Coin image
+	POINT point;	//Position coordinates (for necessary cases)
+	RECT rc;		//Rect (for collision judgment)
 };
 
 struct tagSave
@@ -90,21 +90,21 @@ class Map;
 
 class UI : public gameNode
 {
-private: // 인벤토리 벡터
+private: // Bag related
 	typedef vector<tagItem> vBag;
 	typedef vector<tagItem>::iterator viBag;
 
 	vBag _vBag;
 	viBag _viBag;
 
-private: //  타격 수치 출력 벡터
+private: //  Hit output related
 	typedef vector<tagHitOutput> vHit;
 	typedef vector<tagHitOutput>::iterator viHit;
 
 	vHit _vHit;
 	viHit _viHit;
 
-private: // 맵에 아이템 뿌리는용
+private: // Items dropped on the map
 	typedef vector<tagItem> vItem;
 	typedef vector<tagItem>::iterator viItem;
 
@@ -165,19 +165,19 @@ public:
 	void coinNumberMacro(NUMBERFONT font, float x, float y, int num);
 	void hpTopNumberMacro(float x, float y, int num);
 	void hpBottomNumberMacro(float x, float y, int num);
-	void letterMacro(LETTERFONT font, float x, float y, char *str);
-	void letterMacro(LETTERFONT font, float x, float y, char *str, int alpha);
-	void letterMacro2(LETTERFONT font, float x, float y, char *str, int alpha);
+	void letterMacro(LETTERFONT font, float x, float y, const char *str);
+	void letterMacro(LETTERFONT font, float x, float y, const char *str, int alpha);
+	void letterMacro2(LETTERFONT font, float x, float y, const char *str, int alpha);
 	void setInputGuide();
 	void hitOutput(float x, float y, int damage, LETTERFONT font);
 
-	//맵에 아이템 출현~
+	//Add item on map~
 	void addItemOnMap(ITEMNAME name, POINT point);
 	void deleteItemOnMap(int arrNum);
 
 	void addCoinOnMap(POINT point);
 
-	//설정자 접근자
+	//Active state
 	bool getActive() { return _active; }
 	void setActive(bool active) { _active = active; setInputGuide(); }
 
@@ -193,4 +193,3 @@ public:
 	UI();
 	~UI();
 };
-
