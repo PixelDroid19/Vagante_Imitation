@@ -1,17 +1,25 @@
 #pragma once
 
-#include "targetver.h"
+#include "platform_compat.h"
 
-#define WIN32_LEAN_AND_MEAN             // 거의 사용되지 않는 내용은 Windows 헤더에서 제외합니다.
-// Windows 헤더 파일:
-#include <windows.h>
 #include <iostream>
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
-#include <commdlg.h>	//OPENFILENAME
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
+#include <ctime>
+#include <cstdio>
+#include <cstdarg>
 
+#include <string>
+#include <vector>
+#include <map>
+#include <bitset>
+#include <algorithm>
+#include <fstream>
+#include <sstream>
+
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include "commonMacroFunction.h"
 #include "randomFunction.h"
@@ -27,20 +35,17 @@
 #include "txtData.h"
 #include "collision.h"
 #include "database.h"
+#include "debugDraw.h"
 
 using namespace std;
 using namespace IOTA_UTIL;
 
-//===============================================
-// ## 윈도우 설정 디파인 ## 2017.07. 28 ##
-//===============================================
-
-#define WINNAME (LPTSTR)(TEXT("Iota Team"))
+#define WINNAME "Iota Team"
 #define WINSTARTX 50
 #define WINSTARTY 50
 #define WINSIZEX 800
 #define WINSIZEY 600
-#define WINSTYLE WS_CAPTION | WS_SYSMENU
+#define WINSTYLE 0
 
 #define RND randomFunction::getSingleton()
 #define KEYMANAGER keyManager::getSingleton()
@@ -54,18 +59,10 @@ using namespace IOTA_UTIL;
 #define INIDATA iniDataManager::getSingleton()
 #define DATABASE database::getSingleton()
 
-//==================================
-// ## 매크로 함수 ## 17.08.07 ##
-//==================================
-
 #define SAFE_DELETE(p) {if(p) {delete(p); (p) = NULL;}}
 #define SAFE_DELETE_ARRAY(p) {if(p) { delete[](p); (p) = NULL;}}
 #define SAFE_RELEASE(p) {if(p) {(p)->release(); (p)=NULL;}}
 
-//===================================
-// ## 전역 변수 ## 17.08.07 ##
-//===================================
-
-extern HINSTANCE _hInstance;
-extern HWND _hWnd;
+extern SDL_Window* _hWnd;
+extern SDL_Renderer* _renderer;
 extern POINT _ptMouse;

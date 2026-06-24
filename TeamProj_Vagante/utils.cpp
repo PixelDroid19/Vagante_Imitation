@@ -4,7 +4,7 @@
 
 namespace IOTA_UTIL
 {
-	//거리 가져오는 함수
+	// Distance calculation function
 	float getDistance(float startX, float startY, float endX, float endY)
 	{
 		float x = endX - startX;
@@ -13,7 +13,7 @@ namespace IOTA_UTIL
 		return sqrtf(x * x + y * y);
 	}
 
-	//각도 가져오는 함수
+	// Angle calculation function
 	float getAngle(float x1, float y1, float x2, float y2)
 	{
 		float x = x2 - x1;

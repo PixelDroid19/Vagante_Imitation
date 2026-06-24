@@ -9,15 +9,14 @@ public:
 	HRESULT init();
 	void release();
 
-	//세이브
+	// Save
 	void txtSave(const char* saveFileName, vector<string> vStr);
-	char* vectorArrayCombine(vector<string> vArray);
+	string vectorArrayCombine(vector<string> vArray);
 
-	//로드
+	// Load
 	vector<string> txtLoad(const char* loadFileName);
 	vector<string> charArraySeparation(char charArray[]);
 
 	txtData();
 	~txtData();
 };
-

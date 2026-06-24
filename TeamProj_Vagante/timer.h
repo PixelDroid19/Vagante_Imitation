@@ -1,14 +1,15 @@
 #pragma once
+#include <chrono>
+
 class timer
 {
 private:
-	bool _isHardware;		//고성능 하드웨어 지원여부
-	float _timeScale;		//타임 스케일
-	float _timeElapsed;		//tickCount
+	bool _isHardware;
+	float _timeScale;
+	float _timeElapsed;
 
-	__int64 _curTime;
-	__int64 _lastTime;
-	__int64 _periodFrequency;
+	std::chrono::high_resolution_clock::time_point _lastTime;
+	std::chrono::high_resolution_clock::time_point _curTime;
 
 	unsigned long _frameRate;
 	unsigned long _FPSFrameCount;
@@ -23,8 +24,6 @@ public:
 	inline float getElapsedTime(void) const { return _timeElapsed; }
 	inline float getWorldTime(void) const { return _worldTime; }
 
-
 	timer();
 	~timer();
 };
-

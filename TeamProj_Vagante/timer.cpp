@@ -1,37 +1,19 @@
 #include "stdafx.h"
 #include "timer.h"
-#include <mmsystem.h>	
-
-#pragma comment(lib, "winmm.lib")
-
 
 timer::timer()
 {
 }
 
-
 timer::~timer()
 {
-
 }
 
 HRESULT timer::init(void)
 {
-	
-	if (QueryPerformanceFrequency((LARGE_INTEGER*)&_periodFrequency))
-	{
-		_isHardware = true;
-		QueryPerformanceCounter((LARGE_INTEGER*)&_lastTime);
-
-		_timeScale = 1.0f / _periodFrequency;
-	}
-	else
-	{
-		_isHardware = false;
-
-		_lastTime = timeGetTime();
-		_timeScale = 0.001f;
-	}
+	_isHardware = true;
+	_lastTime = std::chrono::high_resolution_clock::now();
+	_timeScale = 1.0f / 1000000.0f;
 
 	_frameRate = 0;
 	_FPSFrameCount = 0;
@@ -43,31 +25,42 @@ HRESULT timer::init(void)
 
 void timer::tick(float lockFPS)
 {
-	if (_isHardware)
-	{
-		QueryPerformanceCounter((LARGE_INTEGER*)&_curTime);
-	}
-	else
-	{
-		_curTime = timeGetTime();
-	}
+	auto now = std::chrono::high_resolution_clock::now();
+	auto elapsed = now - _lastTime;
 
-	_timeElapsed = (_curTime - _lastTime) * _timeScale;
+	long long elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+	_timeElapsed = (float)(elapsedUs * _timeScale);
 
-	//지정한 Frame Per Second 수치만큼 갱신
 	if (lockFPS > 0.0f)
 	{
-		while (_timeElapsed < (1.0f / lockFPS))
-		{
-			if (_isHardware) QueryPerformanceCounter((LARGE_INTEGER*)&_curTime);
-			else _curTime = timeGetTime();
+		const float targetFrameTime = 1.0f / lockFPS;
 
-			_timeElapsed = (_curTime - _lastTime) * _timeScale;
+		// Sleep-based frame cap (SDL wiki pattern); avoids busy-wait CPU burn
+		while (_timeElapsed < targetFrameTime)
+		{
+			const float remaining = targetFrameTime - _timeElapsed;
+			if (remaining > 0.002f)
+				SDL_Delay((Uint32)((remaining - 0.001f) * 1000.0f));
+			else
+			{
+				now = std::chrono::high_resolution_clock::now();
+				elapsed = now - _lastTime;
+				elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+				_timeElapsed = (float)(elapsedUs * _timeScale);
+				continue;
+			}
+
+			now = std::chrono::high_resolution_clock::now();
+			elapsed = now - _lastTime;
+			elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+			_timeElapsed = (float)(elapsedUs * _timeScale);
 		}
 
+		// Fixed timestep: movement and _animCount (int) assume ~60 Hz updates
+		_timeElapsed = targetFrameTime;
 	}
 
-	_lastTime = _curTime;
+	_lastTime = now;
 	_FPSFrameCount++;
 	_FPSTimeElapsed += _timeElapsed;
 	_worldTime += _timeElapsed;
@@ -80,12 +73,11 @@ void timer::tick(float lockFPS)
 	}
 }
 
-
 unsigned long timer::getFrameRate(char* str) const
 {
 	if (str != NULL)
 	{
-		wsprintf(str, "FPS : %d", _frameRate);
+		sprintf(str, "FPS : %d", _frameRate);
 	}
 
 	return _frameRate;

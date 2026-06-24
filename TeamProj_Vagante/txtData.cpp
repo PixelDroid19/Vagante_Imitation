@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "txtData.h"
-
+#include <fstream>
 
 txtData::txtData()
 {
@@ -24,55 +24,41 @@ void txtData::release()
 }
 
 
-//세이브
+// Save
 void txtData::txtSave(const char* saveFileName, vector<string> vStr)
 {
-	HANDLE file;
-	DWORD write;
+	std::ofstream file(saveFileName);
+	if (!file.is_open()) return;
 
-	char str[128];
+	file << vectorArrayCombine(vStr);
 
-	strncpy_s(str, 128, vectorArrayCombine(vStr), 126);
-
-	file = CreateFile(saveFileName, GENERIC_WRITE, FALSE, NULL,
-		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	WriteFile(file, str, strlen(str), &write, NULL);
-
-	CloseHandle(file);
+	file.close();
 }
 
-char* txtData::vectorArrayCombine(vector<string> vArray)			
+string txtData::vectorArrayCombine(vector<string> vArray)			
 {
-	char str[128];
-
-	ZeroMemory(str, sizeof(str));
+	string result;
 
 	for (int i = 0; i < vArray.size(); i++)
 	{
-		//100,100,100,100
-		strncat_s(str, 128, vArray[i].c_str(), 126);
-		if (i + 1 < vArray.size()) strcat(str, ",");
+		result += vArray[i];
+		if (i + 1 < vArray.size()) result += ",";
 	}
 
-	return str;
+	return result;
 }
 
 
-//로드
+// Load
 vector<string> txtData::txtLoad(const char* loadFileName)	 
 {
-	HANDLE file;
+	std::ifstream file(loadFileName);
+	if (!file.is_open()) return vector<string>();
 
-	char str[128];
-	DWORD read;
+	char str[128] = {};
+	file.read(str, 127);
 
-	file = CreateFile(loadFileName, GENERIC_READ, NULL, NULL,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	ReadFile(file, str, 128, &read, NULL);
-
-	CloseHandle(file);
+	file.close();
 
 	return charArraySeparation(str);
 }
@@ -82,12 +68,12 @@ vector<string> txtData::charArraySeparation(char charArray[])
 	vector<string> vArray;
 
 	char* temp;
-	char* separator = ",";
+	const char* separator = ",";
 	char* token;
 
 	token = strtok(charArray, separator);
 
-	vArray.push_back(token);
+	if (token != NULL) vArray.push_back(token);
 
 	while (NULL != (token = strtok(NULL, separator)))
 	{

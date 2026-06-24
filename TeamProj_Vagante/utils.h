@@ -9,14 +9,14 @@
 #define PI128 float(PI / 128.0f)
 
 #define FLOAT_TO_INT(f1) static_cast<int>(f1)
-#define FLOAT_EPSILON 0.001f	//실수의 가장 작은 단위 (그리스어)
+#define FLOAT_EPSILON 0.001f	// Maximum difference for real number comparison (graphic error prevention)
 
 
 namespace IOTA_UTIL
 {
-	//거리 가져오는 함수
+	// Distance calculation function
 	float getDistance(float startX, float startY, float endX, float endY);
 
-	//각도 가져오는 함수
+	// Angle calculation function
 	float getAngle(float x1, float y1, float x2, float y2);
 }

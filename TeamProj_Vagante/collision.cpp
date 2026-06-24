@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #include "collision.h"
+#include <cmath>
 
 namespace IOTA_UTIL
 {
-	//POINT°¡ »ç°¢Çü¾È¿¡ ÀÖ´Ì?
 	bool checkPointInRect(const RECT& rc, const POINT& pt)
 	{
 		if ((rc.left < pt.x && pt.x < rc.right) && (rc.top < pt.y && pt.y < rc.bottom)) return true;
-		
+
 		return false;
 	}
 
@@ -33,7 +33,6 @@ namespace IOTA_UTIL
 	}
 
 
-	//POINT°¡ ¿ø¾È¿¡ ÀÖ´Ì?
 	bool checkPointInCircle(float cX, float cY, float cR, const MYPOINT& pt)
 	{
 		float deltaX = pt.x - cX;
@@ -91,7 +90,6 @@ namespace IOTA_UTIL
 	}
 
 
-	//»ç°¢ÇüÀÌ »ç°¢ÇüÀÌ¶û ºÎµúÇû´Ì?
 	bool isCollision(const MYRECT& rc1, const MYRECT& rc2)
 	{
 		if ((rc1.left <= rc2.right && rc1.right >= rc2.left) &&
@@ -109,7 +107,6 @@ namespace IOTA_UTIL
 	}
 
 
-	//¿ø°ú ¿øÀÌ ºÎµúÇû´Ì?
 	bool isCollision(const MYCIRCLE& cir1, const MYCIRCLE& cir2)
 	{
 		float deltaX = cir2.x - cir1.x;
@@ -126,12 +123,11 @@ namespace IOTA_UTIL
 	}
 
 
-	//»ç°¢ÇüÀÌ ¿ø°ú ºÎµúÇû´Ì?
 	bool isCollision(const MYCIRCLE& cir1, const RECT& rc)
 	{
-		int centerX = FLOAT_TO_INT(cir1.x);
-		int centerY = FLOAT_TO_INT(cir1.y);
-		int radius = FLOAT_TO_INT(cir1.r);
+		int centerX = (int)cir1.x;
+		int centerY = (int)cir1.y;
+		int radius = (int)cir1.r;
 
 		if ((rc.left <= centerX && centerX <= rc.right) ||
 			(rc.top <= centerY && centerY <= rc.bottom))
@@ -161,18 +157,18 @@ namespace IOTA_UTIL
 
 	bool isCollision(const MYCIRCLE& cir, const MYRECT& rc)
 	{
-		int centerX = FLOAT_TO_INT(cir.x);
-		int centerY = FLOAT_TO_INT(cir.y);
-		int radius = FLOAT_TO_INT(cir.r);
+		int centerX = (int)cir.x;
+		int centerY = (int)cir.y;
+		int radius = (int)cir.r;
 
 		if ((rc.left <= centerX && centerX <= rc.right) ||
 			(rc.top <= centerY && centerY <= rc.bottom))
 		{
 			RECT exRect;
-			exRect.left = rc.left - radius;
-			exRect.top = rc.top - radius;
-			exRect.right = rc.right + radius;
-			exRect.bottom = rc.bottom + radius;
+			exRect.left = (int)rc.left - radius;
+			exRect.top = (int)rc.top - radius;
+			exRect.right = (int)rc.right + radius;
+			exRect.bottom = (int)rc.bottom + radius;
 
 			if ((exRect.left <= centerX && centerX <= exRect.right) &&
 				(exRect.top <= centerY && centerY <= exRect.bottom))
@@ -192,7 +188,6 @@ namespace IOTA_UTIL
 	}
 
 
-	//ºÎµúÇûÀ½ ¾îÂîÇÒ²¨´Ï?
 	bool isCollisionReaction(const RECT& rcHold, RECT& rcMove)
 	{
 		RECT rcInter;
@@ -231,16 +226,16 @@ namespace IOTA_UTIL
 	bool isCollisionReaction(const MYRECT& mrcHold, MYRECT& mrcMove)
 	{
 		RECT rcHold;
-		rcHold.left = FLOAT_TO_INT(mrcHold.left);
-		rcHold.top = FLOAT_TO_INT(mrcHold.top);
-		rcHold.right = FLOAT_TO_INT(mrcHold.right);
-		rcHold.bottom = FLOAT_TO_INT(mrcHold.bottom);
+		rcHold.left = (int)mrcHold.left;
+		rcHold.top = (int)mrcHold.top;
+		rcHold.right = (int)mrcHold.right;
+		rcHold.bottom = (int)mrcHold.bottom;
 
 		RECT rcMove;
-		rcMove.left = FLOAT_TO_INT(mrcMove.left);
-		rcMove.top = FLOAT_TO_INT(mrcMove.top);
-		rcMove.right = FLOAT_TO_INT(mrcMove.right);
-		rcMove.bottom = FLOAT_TO_INT(mrcMove.bottom);
+		rcMove.left = (int)mrcMove.left;
+		rcMove.top = (int)mrcMove.top;
+		rcMove.right = (int)mrcMove.right;
+		rcMove.bottom = (int)mrcMove.bottom;
 
 		RECT rcInter;
 
@@ -272,10 +267,10 @@ namespace IOTA_UTIL
 			}
 		}
 
-		mrcMove.left = static_cast<float>(rcMove.left);
-		mrcMove.top = static_cast<float>(rcMove.top);
-		mrcMove.right = static_cast<float>(rcMove.right);
-		mrcMove.bottom = static_cast<float>(rcMove.bottom);
+		mrcMove.left = (float)rcMove.left;
+		mrcMove.top = (float)rcMove.top;
+		mrcMove.right = (float)rcMove.right;
+		mrcMove.bottom = (float)rcMove.bottom;
 
 		return true;
 	}
@@ -303,5 +298,4 @@ namespace IOTA_UTIL
 
 		return false;
 	}
-
 }

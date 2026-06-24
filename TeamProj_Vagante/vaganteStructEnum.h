@@ -2,54 +2,54 @@
 #define TILESIZE 32
 #define STATUSEFFECTMAX 5
 struct tagStat {
-	int hp;		//체력
-	int str;	//힘
-	int dex;	//민첩
-	int vit;	//활력
-	int inl;	//지능
-	int lck;	//운
-	int def;	//방어력
-	int fir;	//불저항
-	int ice;	//얼음저항
-	int lgt;	//빛저항
-	int psn;	//독저항
-	int mel;	//근접공격데미지
-	int rng;	//활공격데미지
-	int crit;	//크리티컬확률
-	int aspd;	//공속
-	int spd;	//이속
+	int hp;		// health
+	int str;	// strength
+	int dex;	// dexterity
+	int vit;	// vitality
+	int inl;	// intelligence
+	int lck;	// luck
+	int def;	// defense
+	int fir;	// fire resistance
+	int ice;	// ice resistance
+	int lgt;	// lightning resistance
+	int psn;	// poison resistance
+	int mel;	// melee attack damage
+	int rng;	// ranged attack damage
+	int crit;	// critical hit chance
+	int aspd;	// attack speed
+	int spd;	// movement speed
 };
 
-//상태이상 종류
+// Status Effect Enum
 enum STATUSEFFECT {
-	STATUSEFFECT_NULL,		//상태이상 없음
-	STATUSEFFECT_POISON,	//상태이상 : 독
-	STATUSEFFECT_FIRE,		//상태이상 : 불
-	STATUSEFFECT_STUN,		//상태이상 : 스턴
-	STATUSEFFECT_HEAL,		//상태이상 : 회복
+	STATUSEFFECT_NULL,		// No status effect
+	STATUSEFFECT_POISON,	// Status effect: Poison
+	STATUSEFFECT_FIRE,		// Status effect: Fire
+	STATUSEFFECT_STUN,		// Status effect: Stun
+	STATUSEFFECT_HEAL,		// Status effect: Heal
 };
-//상태이상 구조체
+// Status Effect Struct
 struct tagStatusEffect {
-	//상태이상 종류
+	// Status effect type
 	STATUSEFFECT type;
-	//남은 지속 시간
+	// Remaining effect time
 	float leftTime;
-	//상태이상 데미지 (회복일 경우 치유량)
+	// Status effect damage (heal amount if healing)
 	int damage;
 };
 enum ITEMSTATE {
-	ITEMSTATE_ONMAP,		//맵에 있음
-	ITEMSTATE_INVENTORY,	//인벤토리에 있음
-	ITEMSTATE_EQUIP,		//장비중
-	ITEMSTATE_NONEXSIST		//존재하지 않음
+	ITEMSTATE_ONMAP,		// On map
+	ITEMSTATE_INVENTORY,	// In inventory
+	ITEMSTATE_EQUIP,		// Equipped
+	ITEMSTATE_NONEXSIST		// Non-existent
 };
 struct tagItemInfo {
-	image* bigImg;			//아이템 이미지(큰거)
-	image* smallImg;		//아이템 이미지(작은거)
-	POINT point;			//아이템 좌표(맵에 있을 시)
-	RECT rc;				//아이템 렉트(맵에 있을 시 사용)
-	tagStat itemstat;		//아이템 능력치
-	int itemstate;			//현재 아이템의 상태(맵,인벤토리,착용중인지 확인)
+	image* bigImg;			// Item image (large)
+	image* smallImg;		// Item image (small)
+	POINT point;			// Item position (when on map)
+	RECT rc;				// Item rect (collision when on map)
+	tagStat itemstat;		// Item stat value
+	int itemstate;			// Check item state (on map, inventory, equipped)
 };
 
 enum ENEMYSTATE {
@@ -70,46 +70,46 @@ enum MAPTILETYPE {
 	MAPTILE_SPIKE_TRAP
 };
 struct mapInfo {
-	//타일 종류
+	// Tile type
 	int type;
-	//타일 위치
+	// Tile position
 	POINT point;
-	//타일 렉트
+	// Tile rect
 	RECT rc;
 };
 enum PLAYERSTATE {
-	PLAYERSTATE_IDLE,				//일반상태
-	PLAYERSTATE_MOVING,				//이동
-	PLAYERSTATE_LOOKING_DOWN,		//아래를 내려다보는 상태
-	PLAYERSTATE_LOOKING_DOWN_MOVING,//아래를 내려다보고 움직이는 상태
-	PLAYERSTATE_JUMPING,			//점프
-	PLAYERSTATE_FALLING,			//추락
-	PLAYERSTATE_ATTACKING,			//지상 공격
-	PLAYERSTATE_ATTACKING_JUMP,		//점프 공격
-	PLAYERSTATE_ATTACKING_3,		//공격3
+	PLAYERSTATE_IDLE,				// Normal idle
+	PLAYERSTATE_MOVING,				// Moving
+	PLAYERSTATE_LOOKING_DOWN,		// Looking down while on ladder
+	PLAYERSTATE_LOOKING_DOWN_MOVING,// Looking down while moving
+	PLAYERSTATE_JUMPING,			// Jumping
+	PLAYERSTATE_FALLING,			// Falling
+	PLAYERSTATE_ATTACKING,			// Normal attack
+	PLAYERSTATE_ATTACKING_JUMP,		// Jump attack
+	PLAYERSTATE_ATTACKING_3,		// Attack 3
 
-	PLAYERSTATE_HIT,				//공격받음
-	PLAYERSTATE_HOLDING_WALL,		//벽 매달림
-	PLAYERSTATE_HOLDING_LADDERUP,		//사다리 매달림 올라감
-	PLAYERSTATE_HOLDING_LADDERDOWN,		//사다리 매달림 내려감
-	PLAYERSTATE_CHEKINGINVENTORY,	//인벤토리 확인중
+	PLAYERSTATE_HIT,				// Was hit
+	PLAYERSTATE_HOLDING_WALL,		// Grabbing wall
+	PLAYERSTATE_HOLDING_LADDERUP,		// Climbing ladder up
+	PLAYERSTATE_HOLDING_LADDERDOWN,		// Climbing ladder down
+	PLAYERSTATE_CHEKINGINVENTORY,	// Checking inventory
 
 	PLAYERSTATE_DEAD
 };
 struct tagPlayerInfo {
-	image* image;
+	image* img;
 	PLAYERSTATE state;
-	tagStatusEffect statusEffect[5];	//상태이상
-	tagStat stat;						//스탯
-	float pointx, pointy;				//현재좌표
-	float xspeed;						//현재 좌우 이동 속도
-	float yspeed;						//현재 상하 이동 속도
-	bool lookingRight;					//보고있는 방향
-	bool lookingLeft;					//보고있는 방향
-	float jumppower;					//점프력
-	RECT rc;							//렉트~!
-	int money;							//돈
-	float gravity;						//중력
-	int currentFrameX, curretFrameY;	//현재 프레임
+	tagStatusEffect statusEffect[5];	// Status effects
+	tagStat stat;						// Stats
+	float pointx, pointy;				// Player position
+	float xspeed;						// Left-right movement speed
+	float yspeed;						// Up-down movement speed
+	bool lookingRight;					// Looking right
+	bool lookingLeft;					// Looking left
+	float jumppower;					// Jump power
+	RECT rc;							// Rect~!
+	int money;							// Money
+	float gravity;						// Gravity
+	int currentFrameX, curretFrameY;	// Current frame
 	
 };
