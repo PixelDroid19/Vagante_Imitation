@@ -30,7 +30,7 @@ void keyAniManager::update()
 
 	for (iter; iter != _mTotalAnimation.end(); ++iter)
 	{
-		//애니메이션이 재생중이지 않으면 재생하지 않는다
+		// If animation is not playing, don't update frames
 		if (!iter->second->isPlay()) continue;
 
 		iter->second->frameUpdate(TIMEMANAGER->getElapsedTime() * 1.0f);
@@ -43,7 +43,7 @@ void keyAniManager::render()
 }
 
 
-//디폴트 키 애니메이션
+// Default key animation
 void keyAniManager::addDefaultFrameAnimation(string animationKeyName, const char* imageKeyName, int fps, bool reverse, bool loop)							  
 {
 	image* img = IMAGEMANAGER->findImage(imageKeyName);
@@ -82,7 +82,7 @@ void keyAniManager::addDefaultFrameAnimation(string animationKeyName, const char
 }
 
 
-//배열 키 애니메이션
+// Array key animation
 void keyAniManager::addArrayFrameAnimation(string animationKeyName, const char* imageKeyName, int* arr, int arrLen, int fps, bool loop)								
 {
 	image* img = IMAGEMANAGER->findImage(imageKeyName);
@@ -120,7 +120,7 @@ void keyAniManager::addArrayFrameAnimation(string animationKeyName, const char* 
 }
 
 
-//구간 키 애니메이션
+// Coordinate key animation
 void keyAniManager::addCoordinateFrameAnimation(string animationKeyName, char* imageKeyName, int start, int end, int fps, bool reverse, bool loop)							   
 {
 	image* img = IMAGEMANAGER->findImage(imageKeyName);

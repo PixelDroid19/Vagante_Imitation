@@ -4,9 +4,9 @@
 
 struct tagIniData
 {
-	const char* subject;		//亲格			厘厚
-	const char* title;			//家力格			公仿
-	const char* body;			//蔼(value)		99
+	const char* subject;
+	const char* title;
+	const char* body;
 };
 
 class iniDataManager : public singletonBase<iniDataManager>
@@ -20,7 +20,7 @@ private:
 
 private:
 	arrIniDatas _vIniData;
-	
+
 public:
 	HRESULT init();
 	void release();
@@ -31,8 +31,6 @@ public:
 	char* loadDataString(const char* fileName, const char* subject, const char* title);
 	int loadDataInterger(const char* fileName, const char* subject, const char* title);
 
-
 	iniDataManager();
 	~iniDataManager();
 };
-

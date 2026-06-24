@@ -4,17 +4,18 @@
 
 using namespace std;
 
-#define KEYMAX 256
+#define KEYMAX 512
 
 class keyManager : public singletonBase<keyManager>
 {
 private:
 	bitset<KEYMAX> _keyUp;
 	bitset<KEYMAX> _keyDown;
-	
+
 public:
 	HRESULT init();
 	void release();
+	void update();
 
 	bool isOnceKeyDown(int key);
 	bool isOnceKeyUp(int key);
@@ -27,8 +28,6 @@ public:
 	void setKeyDown(int key, bool state) { _keyDown.set(key, state); }
 	void setKeyUp(int key, bool state) { _keyUp.set(key, state); }
 
-
 	keyManager();
 	~keyManager();
 };
-

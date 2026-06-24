@@ -1,23 +1,20 @@
 #include "stdafx.h"
 #include "keyManager.h"
 
-
 keyManager::keyManager()
 {
 }
 
-
 keyManager::~keyManager()
 {
-
 }
 
 HRESULT keyManager::init()
 {
 	for (int i = 0; i < KEYMAX; i++)
 	{
-		this->getKeyUp().set(i, false);
-		this->getKeyUp().set(i, false);
+		_keyDown.set(i, false);
+		_keyUp.set(i, false);
 	}
 
 	return S_OK;
@@ -25,50 +22,59 @@ HRESULT keyManager::init()
 
 void keyManager::release()
 {
-
 }
 
+void keyManager::update()
+{
+	const Uint8* state = SDL_GetKeyboardState(NULL);
+	static Uint8 prevState[KEYMAX] = {0};
+
+	for (int i = 0; i < KEYMAX; i++)
+	{
+		bool current = state[i] != 0;
+		bool prev = prevState[i] != 0;
+
+		// Edge detection: pressed/released this frame only
+		_keyDown.set(i, current && !prev);
+		_keyUp.set(i, !current && prev);
+
+		prevState[i] = state[i];
+	}
+
+	SDL_Keymod mod = SDL_GetModState();
+
+	if (mod & KMOD_SHIFT) _keyDown.set(KEYMAX - 1, true);
+	else _keyDown.set(KEYMAX - 1, false);
+
+	if (mod & KMOD_CTRL) _keyDown.set(KEYMAX - 2, true);
+	else _keyDown.set(KEYMAX - 2, false);
+}
 
 bool keyManager::isOnceKeyDown(int key)
 {
-	if (GetAsyncKeyState(key) & 0x8000)
-	{
-		if (!this->getKeyDown()[key])
-		{
-			this->setKeyDown(key, true);
-			return true;
-		}
-	}
-	else this->setKeyDown(key, false);
+	if (key < 0 || key >= KEYMAX)
+		return false;
 
-	return false;
+	return _keyDown[key];
 }
 
-bool keyManager::isOnceKeyUp(int key)  
+bool keyManager::isOnceKeyUp(int key)
 {
-	if (GetAsyncKeyState(key) & 0x8000) this->setKeyUp(key, true);
-	else
-	{
-		if (this->getKeyUp()[key])
-		{
-			this->setKeyUp(key, false);
-			return true;
-		}
-	}
+	if (key < 0 || key >= KEYMAX)
+		return false;
 
-	return false;
+	return _keyUp[key];
 }
 
 bool keyManager::isStayKeyDown(int key)
 {
-	if (GetAsyncKeyState(key) & 0x8000) return true;
-	
-	return false;
+	if (key < 0 || key >= KEYMAX)
+		return false;
+
+	return SDL_GetKeyboardState(NULL)[key] != 0;
 }
 
-bool keyManager::isToggleKey(int key)  
+bool keyManager::isToggleKey(int key)
 {
-	if (GetKeyState(key) & 0x0001) return true;
-
 	return false;
 }

@@ -36,10 +36,10 @@ public:
 
 	void loadDatabase(string name);
 
-	//속성에 대한 접근자
+	// Get element properties
 	elements* getElementData(string str) { return _mTotalElement.find(str)->second; }
 
-	//설정자
+	// Setter
 	void setElementDataCurrentHP(string str, float ch);
 	void setElementDataMaxHP(string str, float mh);
 	void setElementDataAngle(string str, float a);
@@ -52,4 +52,3 @@ public:
 	database();
 	~database();
 };
-
