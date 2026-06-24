@@ -9,27 +9,27 @@ class UI;
 struct tagFireBall
 {
 
-	RECT rc;						//미싸일 충돌박스
-	float x, y;						//미싸일 좌표
-	float angle;					//미쏴일 앵글
-	float radius;					//반지름
-	float speed;					//속도
-	float fireX, fireY;				//미싸일 발사시점 좌표
-	bool fire;						//쐈어?
+	RECT rc;						// Projectile collision box
+	float x, y;						// Projectile position
+	float angle;					// Projectile angle
+	float radius;					// Radius
+	float speed;					// Speed
+	float fireX, fireY;				// Projectile launch position
+	bool fire;						// Is fired?
 	int currentFrameX, currentFrameY;
 	int count;
 	float power;
 	int type;
 };
 
-//공용으로 사용하는 총알
+// Projectile used by enemies
 class FireBall : public gameNode
 {
 private:
 	vector<tagFireBall> _vFireBall;
 	vector<tagFireBall>::iterator _viFireBall;
 
-	image* _fireBallImage;			//미싸일 이미지
+	image* _fireBallImage;			// Projectile image
 	const char* _imageName;
 	float _range;
 	int _FireBallMax;
@@ -56,7 +56,7 @@ public:
 	void setPlayerAddressLink(Player* player) { _player = player; }
 	void setUIAddressLink(UI* ui) { _ui = ui; }
 
-	//for A* 알고리즘
+	// For A* algorithm
 	FireBall();
 	~FireBall();
 };

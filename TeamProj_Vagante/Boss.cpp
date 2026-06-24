@@ -20,28 +20,28 @@ HRESULT Boss::init()
 }
 HRESULT Boss::init(POINT point)
 {
-	//초기화해주세욤
+	//Initialize variables
 	_image = IMAGEMANAGER->findImage("boss_dragon_sleep");
-	_state = BOSSSTATE_SLEEP;													//상태
+	_state = BOSSSTATE_SLEEP;													//State
 	for (int i = 0; i < STATUSEFFECTMAX; i++)
 	{
-		_statusEffect[i].type = STATUSEFFECT_NULL;  //상태이상
+		_statusEffect[i].type = STATUSEFFECT_NULL;  //Status effect
 		_statusEffect[i].leftTime = 0;
 		_statusEffect[i].damage = 0;
 	}
-	_currentFrameX = _currentFrameY = 0;									//프레임
+	_currentFrameX = _currentFrameY = 0;									//Frame
 	_pointx = point.x;
-	_pointy = point.y;										//좌표
-	_xspeed = _yspeed = 0;												//x,y축 이동 속도
-	_money = 10;															//몬스터 죽으면 나올 동전 갯수
-	//_isFindPlayer = false;													//플레이어를 발견한 상태인지
+	_pointy = point.y;										//Coordinates
+	_xspeed = _yspeed = 0;												//x,y movement speed
+	_money = 10;															//Gold dropped when killed
+	//_isFindPlayer = false;													//Whether player was found
 	_fireball = new FireBall;
 	_fireball->setUIAddressLink(_ui);
 	_fireball->setMapAddressLink(_map);
 	_fireball->setPlayerAddressLink(_player);
 	_fireball->init(100, 1000, "fireball");
 	_actTimer = TIMEMANAGER->getWorldTime();
-	//_frameTime, _frameFPS;											//프레임 변화용
+	//_frameTime, _frameFPS;											//Frame change
 	_minCog = 150;
 	_maxCog = 1500;
 	_statistics.hp = 100;
@@ -138,8 +138,8 @@ void Boss::render()
 
 }
 
-//그릴 때	x좌표에 camera.x 만큼
-//			y좌표에 camera.y 만큼 더해주기!!!!
+//Draw: x coordinate by camera.x
+//			y coordinate by camera.y offset!!!!
 void Boss::render(POINT camera)
 {
 	draw(camera);
@@ -155,6 +155,40 @@ void Boss::draw(POINT camera)
 	_fireball->render(camera);
 	_image->frameRender(getMemDC(), _pointx - _image->getFrameWidth() / 2 + camera.x, _pointy - _image->getFrameHeight() / 2 + camera.y, _currentFrameX, _currentFrameY);
 
+}
+
+void Boss::drawDebug(POINT camera)
+{
+	if (!isDebugDrawEnabled())
+		return;
+
+	SDL_Renderer* dc = getMemDC();
+
+	if (isDebugLayerEnabled(DEBUG_LAYER_PATH))
+	{
+		for (size_t i = 0; i < _wayToPlayer.size(); i++)
+		{
+			int x = _wayToPlayer[i].vx * TILESIZE + TILESIZE / 2 + camera.x;
+			int y = _wayToPlayer[i].vy * TILESIZE + TILESIZE / 2 + camera.y;
+			debugDrawPoint(dc, x, y, 3, DebugPalette::Path);
+		}
+
+		for (size_t i = 1; i < _wayToPlayer.size(); i++)
+		{
+			int x0 = _wayToPlayer[i - 1].vx * TILESIZE + TILESIZE / 2 + camera.x;
+			int y0 = _wayToPlayer[i - 1].vy * TILESIZE + TILESIZE / 2 + camera.y;
+			int x1 = _wayToPlayer[i].vx * TILESIZE + TILESIZE / 2 + camera.x;
+			int y1 = _wayToPlayer[i].vy * TILESIZE + TILESIZE / 2 + camera.y;
+			debugDrawLine(dc, x0, y0, x1, y1, DebugPalette::Path);
+		}
+	}
+
+	if (!isDebugLayerEnabled(DEBUG_LAYER_HITBOX))
+		return;
+
+	debugDrawRect(dc, _rc, camera, DebugPalette::Enemy);
+	debugDrawRect(dc, _rcHit, camera, DebugPalette::Attack);
+	debugDrawCrosshair(dc, (int)_pointx + camera.x, (int)_pointy + camera.y, 5, DebugPalette::EnemyCore);
 }
 void Boss::speedAdjust()
 {
@@ -203,7 +237,7 @@ void Boss::mapCollisionHandle()
 					{
 						_pointx += cosf(getAngle(maptile.point.x + TILESIZE / 2, maptile.point.y + TILESIZE / 2, _pointx, _pointy))*(temp.right - temp.left + 1);
 						_pointy -= sinf(getAngle(maptile.point.x + TILESIZE / 2, maptile.point.y + TILESIZE / 2, _pointx, _pointy))*(temp.bottom - temp.top + 1);
-						//스탬핑 체크!
+						//Stamp check!
 						if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 					}
 				}
@@ -216,63 +250,63 @@ void Boss::mapCollisionHandle()
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((upM.type == MAPTILE_WALL || upM.type == MAPTILE_WALL2) && isCollisionReaction(upM.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((upR.type == MAPTILE_WALL || upR.type == MAPTILE_WALL2) && isCollisionReaction(upR.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((midL.type == MAPTILE_WALL || midL.type == MAPTILE_WALL2) && isCollisionReaction(midL.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((midM.type == MAPTILE_WALL || midM.type == MAPTILE_WALL2) && isCollisionReaction(midM.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((midR.type == MAPTILE_WALL || midR.type == MAPTILE_WALL2) && isCollisionReaction(midR.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((botL.type == MAPTILE_WALL || botL.type == MAPTILE_WALL2) && isCollisionReaction(botL.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((botM.type == MAPTILE_WALL || botM.type == MAPTILE_WALL2) && isCollisionReaction(botM.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 		else if ((botR.type == MAPTILE_WALL || botR.type == MAPTILE_WALL2) && isCollisionReaction(botR.rc, _rc))
 		{
 			_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 			_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-			//스탬핑 체크!
+			//Stamp check!
 			if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 		}
 	}
@@ -331,63 +365,63 @@ void Boss::mapCollisionHandle()
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((upM.type == MAPTILE_WALL || upM.type == MAPTILE_WALL2) && isCollisionReaction(upM.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((upR.type == MAPTILE_WALL || upR.type == MAPTILE_WALL2) && isCollisionReaction(upR.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((midL.type == MAPTILE_WALL || midL.type == MAPTILE_WALL2) && isCollisionReaction(midL.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((midM.type == MAPTILE_WALL || midM.type == MAPTILE_WALL2) && isCollisionReaction(midM.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((midR.type == MAPTILE_WALL || midR.type == MAPTILE_WALL2) && isCollisionReaction(midR.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((botL.type == MAPTILE_WALL || botL.type == MAPTILE_WALL2) && isCollisionReaction(botL.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((botM.type == MAPTILE_WALL || botM.type == MAPTILE_WALL2) && isCollisionReaction(botM.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	else if ((botR.type == MAPTILE_WALL || botR.type == MAPTILE_WALL2) && isCollisionReaction(botR.rc, _rc))
 	{
 		_pointy = _rc.top + (_rc.bottom - _rc.top) / 2;
 		_pointx = _rc.left + (_rc.right - _rc.left) / 2;
-		//스탬핑 체크!
+		//Stamp check!
 		if (_state == BOSSSTATE_STAMPING && _currentFrameX == _image->getMaxFrameX()) _stampHitLand = true;
 	}
 	*/
@@ -395,7 +429,7 @@ void Boss::mapCollisionHandle()
 }
 void Boss::addStatusEffect(tagStatusEffect statuseffect)
 {
-	//상태이상 추가!
+	//Add status effect!
 	for (int i = 0; i < 5; i++)
 	{
 		if (_statusEffect[i].type == NULL)
@@ -406,7 +440,7 @@ void Boss::addStatusEffect(tagStatusEffect statuseffect)
 	}
 }
 
-//상태이상 처리
+//Status effect processing
 void Boss::statusEffect()
 {
 	for (int i = 0; i < 5; i++)
@@ -498,14 +532,14 @@ void Boss::stateHandle()
 	switch (_state)
 	{
 	case BOSSSTATE_SLEEP:
-		//boss 활성화
+		//Activate boss
 		if (getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) < _minCog)
 		{
-			//상태변경
+			//State transition
 			_state = BOSSSTATE_ACTIVATE;
-			//상태 변화에 따른 이미지 변화
+			//Change image according to state change
 			imageChange();
-			//시간 설정
+			//Timer reset
 			_actTimer = TIMEMANAGER->getWorldTime();
 
 			SOUNDMANAGER->stop("7_DarkCave_Music");
@@ -513,12 +547,12 @@ void Boss::stateHandle()
 		}
 		break;
 	case BOSSSTATE_ACTIVATE:
-		//잠에서 깨어났을 때 (위로 조금 날아오른 뒤 BOSSSTATE_FLYING 으로 상태 변화)
+		//When roar ends (if within range, transition to BOSSSTATE_FLYING)
 		if (TIMEMANAGER->getWorldTime() - _actTimer > 2)
 		{
 			astar();
 			_state = BOSSSTATE_FLYING;
-			//상태 변화에 따른 이미지 변화
+			//Change image according to state change
 			imageChange();
 			_actTimer = TIMEMANAGER->getWorldTime();
 		}
@@ -528,7 +562,7 @@ void Boss::stateHandle()
 		}
 		break;
 	case BOSSSTATE_FLYING:
-		//플레이어 방향으로 이동 후 일정 거리가 되면 BOSSSTATE_FIREING로 상태 변화
+		//Move towards player and if within certain distance, transition to BOSSSTATE_FIREING
 		RECT temp;
 		if (TIMEMANAGER->getWorldTime() - _actTimer > 4 && getDistance(_pointx, _pointy, _player->getPoint().x, _player->getPoint().y) < 300)
 		{
@@ -544,12 +578,14 @@ void Boss::stateHandle()
 				else _fireballCount = 5;
 				_canfire = true;
 			}
-			//상태 변화에 따른 이미지 변화
+			//Change image according to state change
 			imageChange();
 			_actTimer = TIMEMANAGER->getWorldTime();
 		}
-		else if (IntersectRect(&temp, &_rc, &_player->getRect()))
+		else
 		{
+			RECT playerRect = _player->getRect();
+			if (IntersectRect(&temp, &_rc, &playerRect)) {
 			_state = BOSSSTATE_FIREING;
 			if (_statistics.hp <= 50) _fireballCount = 7;
 			else _fireballCount = 5;
@@ -574,12 +610,13 @@ void Boss::stateHandle()
 
 			}
 		}
+		}
 		break;
 	case BOSSSTATE_FIREING:
 		if (_fireballCount == 0 && _currentFrameX == _image->getMaxFrameX())
 		{
 			_state = BOSSSTATE_FLYING;
-			//상태 변화에 따른 이미지 변화
+			//Change image according to state change
 			imageChange();
 			_actTimer = TIMEMANAGER->getWorldTime();
 		}
@@ -653,7 +690,7 @@ void Boss::deadCheck()
 
 void Boss::add_openlist(vertex v)
 {
-	//예외처리
+	//Duplicate check
 	for (int i = 0; i < _openlist.size(); i++)
 	{
 		if (_openlist[i].vx == v.vx && _openlist[i].vy == v.vy)
@@ -668,14 +705,14 @@ void Boss::add_openlist(vertex v)
 			return;
 		}
 	}
-	//추가
+	//Add
 	_openlist.push_back(v);
-	//정렬
+	//Sort
 	sort(_openlist.begin(), _openlist.end());
 }
 void Boss::add_closelist(vertex v)
 {
-	//예외처리
+	//Duplicate check
 	bool check = true;;
 	for (int i = 0; i < _closelist.size(); i++)
 	{
@@ -684,7 +721,7 @@ void Boss::add_closelist(vertex v)
 			check = false;
 		}
 	}
-	//추가
+	//Add
 	_closelist.push_back(v);
 }
 vertex Boss::pop_openlist()
@@ -718,7 +755,7 @@ vertex Boss::calc_vertex(vertex v, vertex p)
 	//if (v.p == NULL)
 	if (v.px == _startpoint.vx || v.py == _startpoint.vy)
 	{
-		//이동비용 구하기
+		//Calculate movement cost
 		if (v.vx != _startpoint.vx && v.vy != _startpoint.vy)
 		{
 			v.h = _startpoint.h + 14;
@@ -731,7 +768,7 @@ vertex Boss::calc_vertex(vertex v, vertex p)
 		{
 			v.h = _startpoint.h + 10;
 		}
-		//예상이동비용 구하기
+		// Sort movement distance calculation
 		v.g = 0;
 		if (v.vx != _goalTileX)
 		{
@@ -741,13 +778,13 @@ vertex Boss::calc_vertex(vertex v, vertex p)
 		{
 			v.g += 10 * (abs(_goalTileY - v.vy));
 		}
-		//비용 구하기
+		//Calculate total
 		v.f = v.g + v.h;
 		return v;
 	}
 	else
 	{
-		//이동비용 구하기
+		//Calculate movement cost
 		if (v.vx != v.px && v.vy != v.py)
 		{
 			v.h = p.h + 14;
@@ -772,7 +809,7 @@ vertex Boss::calc_vertex(vertex v, vertex p)
 		//{
 		//	v.h = v.p->h + 10;
 		//}
-		//예상이동비용 구하기
+		//Calculate heuristic cost
 		v.g = 0;
 		if (v.vx != _goalTileX)
 		{
@@ -782,7 +819,7 @@ vertex Boss::calc_vertex(vertex v, vertex p)
 		{
 			v.g += 10 * (abs(_goalTileY - v.vy));
 		}
-		//비용 구하기
+		//Calculate total
 		v.f = v.g + v.h;
 		return v;
 	}
@@ -821,7 +858,7 @@ void Boss::astar()
 		{
 			_currentvertex = NULL;
 			_npcurrentvertex = pop_openlist();
-			//예외처리
+			//Duplicate check
 			bool check = true;;
 			for (int i = 0; i < _closelist.size(); i++)
 			{
@@ -858,7 +895,7 @@ void Boss::add_opelistEightWay(vertex* v)
 				{
 					temp = calc_vertex(temp, *v);
 					bool check = true;
-					//예외처리
+					//Duplicate check
 					for (int i = 0; i < _openlist.size(); i++)
 					{
 						if (_openlist[i].vx == temp.vx && _openlist[i].vy == temp.vy)
@@ -873,13 +910,13 @@ void Boss::add_opelistEightWay(vertex* v)
 							check = false;
 						}
 					}
-					//추가
+					//Add
 					if (check)_openlist.push_back(temp);
 				}
 			}
 		}
 	}
-	//정렬
+	//Sort
 	sort(_openlist.begin(), _openlist.end());
 
 }

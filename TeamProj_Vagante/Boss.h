@@ -8,7 +8,7 @@
 #include "UI.h"
 
 /*
-!vaganteStructEnum.h에서 선언했으니 참조만 할 것!
+!You can check the struct in vaganteStructEnum.h!
 enum BossSTATE {
 BossSTATE_IDLE,
 BossSTATE_MOVING,
@@ -20,22 +20,22 @@ BossSTATE_DEAD
 };
 
 struct tagStat {
-int hp;		//체력
-int str;	//힘
-int dex;	//민첩
-int vit;	//활력
-int inl;	//지능
-int lck;	//운
-int def;	//방어력
-int fir;	//불저항
-int ice;	//얼음저항
-int lgt;	//빛저항
-int psn;	//독저항
-int mel;	//근접공격데미지
-int rng;	//활공격데미지
-int crit;	//크리티컬확률
-int aspd;	//공속
-int spd;	//이속
+int hp;		//HP
+int str;	//Strength
+int dex;	//Dexterity
+int vit;	//Vitality
+int inl;	//Intelligence
+int lck;	//Luck
+int def;	//Defense
+int fir;	//Fire resistance
+int ice;	//Ice resistance
+int lgt;	//Lightning resistance
+int psn;	//Poison resistance
+int mel;	//Melee attack damage
+int rng;	//Ranged attack damage
+int crit;	//Critical chance
+int aspd;	//Attack speed
+int spd;	//Movement speed
 };
 */
 
@@ -50,14 +50,14 @@ enum BOSSSTATE {
 	BOSSSTATE_DEAD
 };
 
-//For A*알고리즘!!
+//For A* algorithm!!
 typedef struct vertex {
-	int f;		//비용
-	int h;		//이동비용
-	int g;		//예상이동비용
-	int vx, vy;	//위치
-	int px, py;	//부모 위치
-	//vertex *p;	//부모 vertex
+	int f;		//Total cost
+	int h;		//Movement cost
+	int g;		// Movement distance calculation
+	int vx, vy;	// Position
+	int px, py;	// Parent position
+	//vertex *p;	// Parent vertex
 	bool operator<(const vertex &v) const {
 		return (f > v.f);
 	}
@@ -67,52 +67,52 @@ class UI;
 class Boss : public gameNode
 {
 private:
-	image* _image;														//이미지
-	BOSSSTATE _state;													//상태
-	Player* _player;													//플레이어 정보
+	image* _image;														// Image
+	BOSSSTATE _state;													// State
+	Player* _player;													// Player link
 	UI* _ui;															//ui
-	tagStatusEffect _statusEffect[5];									//상태이상
-	tagStat _statistics;												//스탯
-	int _currentFrameX, _currentFrameY;									//프레임
-	RECT _rc;															//이동충돌범위
-	RECT _rcHit;														//공격충돌범위 add by JW
-	float _pointx, _pointy;												//좌표
-	float _xspeed, _yspeed;												//x,y축 이동 속도
-	int _money;															//몬스터 죽으면 나올 동전 갯수
-	Map* _map;															//맵 정보
-	bool _isFindPlayer;													//플레이어를 발견한 상태인지
-	bool _stampHitLand;													//stamp공격 체크를 위한 bool값	
-	bool _totallydead;													//연산 정지 확인을 위한 bool값
-	int _fireballCount;													//불 발사 갯수
+	tagStatusEffect _statusEffect[5];									// Status effect
+	tagStat _statistics;												// Stats
+	int _currentFrameX, _currentFrameY;									// Current frame
+	RECT _rc;															// Movement collision rect
+	RECT _rcHit;														// Attack collision rect (add by JW)
+	float _pointx, _pointy;												// Coordinates
+	float _xspeed, _yspeed;												// x,y movement speed
+	int _money;															// Gold dropped when killed
+	Map* _map;															// Map link
+	bool _isFindPlayer;													// Whether player was found
+	bool _stampHitLand;													// Bool to check stamp hit land	
+	bool _totallydead;													// Bool for confirming complete death
+	int _fireballCount;													// Fireball count
 	FireBall* _fireball;
-	mapInfo upL, upM, upR, midL, midM, midR, botL, botM, botR;			// 위치 정보
+	mapInfo upL, upM, upR, midL, midM, midR, botL, botM, botR;			// Position info
 	bool _canfire;
 	bool _lookleft;
-	float _actTimer;													//행동시간
-	int _frameTime, _frameFPS;											//프레임 변화용
-	float _minCog, _maxCog;												//몬스터 최초 인식범위, 한계 인식범위
+	float _actTimer;													// Action timer
+	int _frameTime, _frameFPS;											// Frame change amount
+	float _minCog, _maxCog;												// Minimum cognition range, maximum cognition range
 	float _timerForFrameUpdate;
 	float _timerForAstar;
-	//For A* 알고리즘!!
-	int _curTileX, _curTileY;		//현재 위치
-	int _goalTileX, _goalTileY;		//목표 위치
-	vertex _startpoint;			//시작점
-	vertex* _currentvertex;			//현재 탐색 위치
-	vertex _npcurrentvertex;			//현재 탐색 위치
-	vector<vertex> _wayToPlayer;		//플레이어에게 가는 길 정보
-	int _tileinfo[40][58];			//맵 정보
-	//일단 벡터로 만들어봄
+	// For A* algorithm!!
+	int _curTileX, _curTileY;		// Current position
+	int _goalTileX, _goalTileY;		// Goal position
+	vertex _startpoint;			// Start point
+	vertex* _currentvertex;			// Current search position
+	vertex _npcurrentvertex;			// Next search position
+	vector<vertex> _wayToPlayer;		// Path list to player
+	int _tileinfo[40][58];			// Tile info
+	// Open list, close list
 	vector<vertex> _openlist;
 	vector<vertex> _closelist;
-	void add_openlist(vertex v);					//열림목록에 추가
-	void add_closelist(vertex v);					//닫힘목록에 추가
-	vertex getcloselist(int x, int y);				//닫힘목록의 항목 가져오기
-	vertex getopenlist(int x, int y);				//닫힘목록의 항목 가져오기
-	vertex pop_openlist();							//열림목록에서 최소값 리턴
-	vertex pop_closelist();						//닫힘목록에서 뒷 값 리턴
-	vertex pop_closelist(int vx, int vy);			//해당하는 행렬의 vertex값 리턴
-	vertex calc_vertex(vertex v, vertex p);					//vertex의 값 계산
-	void add_opelistEightWay(vertex* v);	//주위 8개 타일 열림목록에 추가
+	void add_openlist(vertex v);					// Add to open list
+	void add_closelist(vertex v);					// Add to close list
+	vertex getcloselist(int x, int y);				// Get from close list
+	vertex getopenlist(int x, int y);				// Get from open list
+	vertex pop_openlist();							// Pop minimum from open list
+	vertex pop_closelist();						// Pop from close list
+	vertex pop_closelist(int vx, int vy);			// Return vertex at matching coordinates
+	vertex calc_vertex(vertex v, vertex p);					// Calculate vertex value
+	void add_opelistEightWay(vertex* v);	// Add surrounding 8 tiles to open list
 	bool checkGoal();
 	void makeWay();
 	void astar();
@@ -125,6 +125,7 @@ public:
 	void render();
 	void render(POINT camera);
 	void draw(POINT camera);
+	void drawDebug(POINT camera);
 
 	void stateHandle();
 	void speedAdjust();
@@ -133,20 +134,20 @@ public:
 	void imageChange();
 	void deadCheck();
 
-	virtual void move();			// 이동관련함수
+	virtual void move();			// Movement function
 	void mapCollisionHandle();
-	virtual void frameUpdate();		// 프레임 업데이트
+	virtual void frameUpdate();		// Frame update
 
 
-									//공격 받았을 시 (데미지만)
+									// When damaged (without knockback)
 	void getDamaged(int damage) { _statistics.hp -= damage; SOUNDMANAGER->play("5_Enemy_Demage_Sound", 1);}
-	//공격 받았을 시 (데미지&넉백)
+	// When damaged (knockback & angle)
 	void getDamaged(int damage, float angle, float knockbackpower) { _statistics.hp -= damage; _ui->hitOutput(_pointx, _pointy, damage, LETTER_WHITE);  SOUNDMANAGER->play("5_Enemy_Demage_Sound", 1); }
-	//상태이상
+	// Status effect
 	void addStatusEffect(tagStatusEffect statuseffect);
 
 
-	//설정자&접근자
+	// Getter & setter
 	int getHP() { return _statistics.hp; }
 	void setHP(int hp) { _statistics.hp = hp; }
 	tagStat getStat() { return _statistics; }

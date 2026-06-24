@@ -123,7 +123,7 @@ void FireBall::hitPlayer()
 	RECT temp;
 	for (int i = _vFireBall.size() - 1; i >= 0; i--)
 	{
-		if (IntersectRect(&temp, &_vFireBall[i].rc, &_player->getRect()))
+		RECT playerRect = _player->getRect(); if (IntersectRect(&temp, &_vFireBall[i].rc, &playerRect))
 		{
 			_player->getDamaged(_vFireBall[i].power);
 			tagStatusEffect temp;
